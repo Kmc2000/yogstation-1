@@ -38,6 +38,20 @@
 	if(H)
 		H.endTailWag()
 
+
+/datum/species/terminator
+	// xd
+	name = "Ti-84 android"
+	id = "terminator"
+	default_color = "FFFFFF"
+	use_skintones = 0
+	specflags = list()
+	roundstart = 0
+	limbs_id = "terminator"
+	default_features = list("mcolor" = "FFF", "tail_human" = "None", "ears" = "None", "wings" = "None")
+	use_skintones = 0
+
+
 /datum/species/human/fly
 	// Humans turned into fly-like abominations in teleporter accidents.
 	name = "Manfly"
@@ -51,6 +65,8 @@
 	roundstart = 0
 	limbs_id = "fly"
 	var/last_eat_message = -STATUS_MESSAGE_COOLDOWN //I am here because flies
+
+
 
 
 /datum/species/human/fly/handle_speech(message)
@@ -1347,6 +1363,16 @@ var/global/image/plasmaman_on_fire = image("icon"='icons/mob/OnFire.dmi', "icon_
 	punchdamagehigh = 19
 	punchstunthreshold = 14 //about 50% chance to stun
 	disguise_fail_health = 50
+
+/datum/species/synth/terminator
+	name = "Ti-841 android"
+	id = "terminator1"
+	armor = 25
+	punchdamagelow = 10
+	punchdamagehigh = 19
+	punchstunthreshold = 14 //about 50% chance to stun
+	disguise_fail_health = 50
+	limbs_id = "terminator"
 
 /datum/species/synth/on_species_gain(mob/living/carbon/human/H, datum/species/old_species)
 	assume_disguise(old_species, H)
