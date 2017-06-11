@@ -17,6 +17,9 @@
 	var/obj/item/robot_parts/robot_suit/robot_suit = null //Used for deconstruction to remember what the borg was constructed out of..
 	var/obj/item/device/mmi/mmi = null
 
+
+ //testing for droidekas
+
 //Hud stuff
 
 	var/obj/screen/inv1 = null

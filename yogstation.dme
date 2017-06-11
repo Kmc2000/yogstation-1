@@ -13,6 +13,14 @@
 // END_PREFERENCES
 
 // BEGIN_INCLUDE
+#include "droidekaROADMAP.dm"
+#include "colony.dmm"
+#include "drop pod.dmm"
+#include "FOB.dmm"
+#include "NT fob.dmm"
+#include "NT smallFOB.dmm"
+#include "shuttlebuild.dmm"
+#include "shuttlebuild2.dmm"
 #include "_maps\__MAP_DEFINES.dm"
 #include "_maps\tgstation2.dm"
 #include "code\_compile_options.dm"

@@ -127,6 +127,7 @@
 /obj/item/weapon/robot_module/standard
 	name = "standard robot module"
 	skins = list("Standard" = "robot", "Droid" = "droid")
+	donator_skins = list("Mr Gutsy" = "gutsy_standard")
 
 /obj/item/weapon/robot_module/standard/New()
 	..()
@@ -145,7 +146,7 @@
 /obj/item/weapon/robot_module/medical
 	name = "medical robot module"
 	skins = list("Mediborg" = "mediborg", "Medihover" = "medihover", "Smile Screen" = "mediborg+smile", "Medical Droid" = "droid-medical","Blue" = "mediborg-blue")
-	donator_skins = list("Eve" = "eve")
+	donator_skins = list("Eve" = "eve", "Mr Gutsy" = "gutsy_medi")
 
 /obj/item/weapon/robot_module/medical/New()
 	..()
@@ -173,7 +174,7 @@
 
 /obj/item/weapon/robot_module/engineering
 	name = "engineering robot module"
-	skins = list("Yellow" = "engiborg-yellow", "Engiborg" = "engiborg")
+	skins = list("Yellow" = "engiborg-yellow", "Engiborg" = "engiborg", "Rover" = "engirover")
 	donator_skins = list("Wall-E" = "wall-eng")
 
 /obj/item/weapon/robot_module/engineering/New()
@@ -209,7 +210,8 @@
 
 /obj/item/weapon/robot_module/security
 	name = "security robot module"
-	skins = list("Secborg" = "secborg")
+	skins = list("Secborg" = "secborg", "Droideka" = "droideka")
+	donator_skins = list("Mr gutsy" = "gutsy_sec")
 
 /obj/item/weapon/robot_module/security/New()
 	..()

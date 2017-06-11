@@ -1,6 +1,7 @@
 /mob/living/silicon/robot/Life()
 	set invisibility = 0
 	set background = BACKGROUND_ENABLED
+	icon_state = icon_state
 
 	if (src.notransform)
 		return
