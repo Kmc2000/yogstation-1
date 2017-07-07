@@ -14,7 +14,7 @@
 	desc = "An immensely powerful mounted laser cannon, the immense weight is held with a large truss and mounting points, it is mounted below the station and requires an external power supply to operate"
 	var/ready = 0
 	var/firing = 0
-
+	var/target = 1 //default to shooting planets, 1 is planet, 2 is centcom
 
 /obj/planet
 	icon = 'icons/obj/planet.dmi'
@@ -24,6 +24,8 @@
 	can_be_unanchored = 0
 	name = "planet"
 	desc = "A beautiful planet that glows red, it is very far in the distance"
+	var/owner = "syndicate" //set this if you want the planet to be owned by someone else
+	var/basetype = "planetary outpost" //set this if you want to change the outpost type, IE manufacturing plant w/e
 	var/random
 	var/destroyed = 0
 
@@ -40,10 +42,10 @@
 			continue
 		sleep(100)
 		icon_state = "destroyed"
-		priority_announce("Outpost [random]. respond! we just lost contact, are you alright..!? RESPOND!", "Syndicate Open Broadcast", 'sound/AI/commandreport.ogg')
+		priority_announce("[basetype] [random]. respond! we just lost contact, are you alright..!? RESPOND!", "[owner]", 'sound/AI/commandreport.ogg')
 		sleep(500)
 		random = rand(10000,99999)
-		priority_announce("This is syndicate command, we just lost [random] civilians in a massive strike!", "Syndicate Open Broadcast", 'sound/AI/commandreport.ogg')
+		priority_announce("This is [owner], we just lost [random] civilians in a massive strike!", "[owner]", 'sound/AI/commandreport.ogg')
 
 
 //a massive death ray that hangs low, below the station
@@ -74,8 +76,27 @@
 	for(var/obj/item/device/laserbattery/L in world)
 		L.firing = 0
 
-	for(var/obj/planet/P in world)
-		P.kaboom() //blow up the planet
+	if(target > 2)
+		target = 1 //error handling, can only be one of two things
+
+	if(target == 1)
+		for(var/obj/planet/P in world)
+			P.kaboom() //blow up the planet
+
+
+	if(target == 2)
+		sleep(10)
+		playsound_global('sound/effects/alert.ogg', repeat=0, channel=1, volume=100)
+		priority_announce("ALERT. LASER TARGET: CENTRAL COMMAND", "Core subsystems", 'sound/AI/commandreport.ogg')
+		sleep(10)
+		priority_announce("Wait! stop! what are you doi-.....", "Central Command", 'sound/AI/commandreport.ogg')
+		playsound_global('sound/effects/planetdeath.ogg', repeat=0, channel=1, volume=30)
+		for(var/mob/M in mob_list)
+			shake_camera(M, 15, 1)
+		sleep(100)
+		priority_announce("Telemetry Failure, unable to establish link to central command. Emergency shuttle system failure, target no longer exists", "Core subsystems", 'sound/AI/commandreport.ogg')
+		SSshuttle.emergencyNoEscape = TRUE //shuttle has nowhere to go!
+		message_admins("Laser has destroyed centcomm, the shuttle cannot leave.At this point the event is over and you should end the round")
 
 
 /obj/machinery/deathray/proc/charge()
@@ -93,6 +114,22 @@
 	name = "Ballistic Calibration Computer"
 	density = 1
 	anchored = 1
+	var/emagged = 0
+	var/code = rand(10000,99999) //code that you need to know in order to attack centcom, use for syndie agents
+
+
+/obj/machinery/firing_console/attack_hand(mob/user) //type that shit to recalibrate!
+	playsound(src,'sound/effects/typing.ogg',25,1)
+	if(emagged)
+		for(var/obj/machinery/deathlaser/L in world)
+		L.target = 2 //RUHOH CENTCOM TARGETED
+		src.say("WARNING. TARGET HAS BEEN SET TO CENTRAL COMMAND")
+	else
+		src.say("Coordinates locked in, unable to change")
+
+
+/obj/machinery/firing_console/attack_ai(mob/user)
+	playsound(src,'sound/effects/typing.ogg',25,1)
 
 
 //obj/machinery/firing_console/New()
@@ -125,19 +162,6 @@
 //			for(var/obj/item/device/laserbattery/L in world) //find our laser batteries and drain them
 //				L.drain_rate = 0 //battery cannot charge whilst console is out of order
 //				return
-
-
-/obj/machinery/firing_console/attack_hand(mob/user) //type that shit to recalibrate!
-	playsound(src,'sound/effects/typing.ogg',25,1)
-	src.say("Recalibration complete")
-
-
-
-
-/obj/machinery/firing_console/attack_ai(mob/user)
-	playsound(src,'sound/effects/typing.ogg',25,1)
-
-
 //End whitespace//
 
 //modded powersink to act as a  battery for the death ray, it won't explode but will warn admins so they can fire the deathray
@@ -164,6 +188,7 @@
 	var/warned20 = 0
 	var/warned50 = 0
 	var/warned70 = 0
+	var/warned98 = 0
 	var/firing = 0 //is the laser firing? prevents spam
 	var/percentage
 
@@ -268,6 +293,7 @@
 		warned20 = 0	//reset the warnings
 		warned50 = 0
 		warned70 = 0
+		warned98 = 0
 		firing = 1
 		for(var/obj/machinery/deathray/L in world) //fire all lasers in the world
 			L.ready = 1
@@ -318,12 +344,14 @@
 			warned70 = 1
 
 	if(power_drained > max_power * 0.98)
-		if (!admins_warned)
-			admins_warned = 1
-			message_admins("Laser battery at ([x],[y],[z] - <A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>) is 95% full, firing will commence shortly.")
-		priority_announce("WARNING Fleija laser battery capacity at 95%, adjusting aim trajectory.", "Incoming Priority Message", 'sound/AI/commandreport.ogg')
-		playsound_global('sound/effects/alert.ogg', repeat=0, channel=1, volume=75)
+		if(!warned 98)
+			if (!admins_warned)
+				admins_warned = 1
+				message_admins("Laser battery at ([x],[y],[z] - <A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>) is 95% full, firing will commence shortly.")
+			warned 98 = 1
+			priority_announce("WARNING Fleija laser battery capacity at 95%, adjusting aim trajectory.", "Incoming Priority Message", 'sound/AI/commandreport.ogg')
+			playsound_global('sound/effects/alert.ogg', repeat=0, channel=1, volume=75)
 
 	if(power_drained >= max_power)
 		charged()
-		
+
