@@ -110,6 +110,8 @@ var/global/list/datum/stack_recipe/diamond_recipes = list ( \
 	origin_tech = "materials=5"
 	sheettype = "uranium"
 	materials = list(MAT_URANIUM=MINERAL_MATERIAL_AMOUNT)
+	var/heat_effect =0.05 //for reactors, effect that the uranium has on the heat see: fission.dm
+	var/depleted_effect = 0.01 //for reactors, how much the heat will drop from 1 depleted uranium
 
 var/global/list/datum/stack_recipe/uranium_recipes = list ( \
 	new/datum/stack_recipe("uranium door", /obj/structure/mineral_door/uranium, 10, one_per_turf = 1, on_floor = 1), \
