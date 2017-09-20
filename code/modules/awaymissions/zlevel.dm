@@ -63,7 +63,7 @@ var/global/list/potentialRandomZlevels = generateMapList(filename = "config/away
 
 
 /proc/seedRuins(z_level = 1, budget = 0, whitelist = /area/space, list/potentialRuins = space_ruins_templates)
-	var/overall_sanity = 100
+	var/overall_sanity = 0 //change me back to 100
 	var/list/ruins = potentialRuins.Copy()
 
 	world << "<span class='boldannounce'>Loading ruins...</span>"
