@@ -13,8 +13,28 @@
 	var/canbuild = list(/obj/structure/chair/borg/conversion)
 	var/building = /obj/structure/chair/borg/conversion
 	var/buildmode = 0 //if buildmode, you don't convert floors, rather you build stuff on them
+	var/obj/item/weapon/gun/energy/disabler/borg/gun
+	var/cooldown = 15
+	var/saved_time = 0
 
-	//1 is assim, 2 build, 3 attack
+/obj/item/weapon/gun/energy/disabler/borg
+	name = "integrated Xel gun"
+	desc = "A slim gun that slots neatly into a borg tool. Neat. Real Neat.."
+	origin_tech = null
+	var/cooldown = 20 //no spamming allowed
+	selfcharge = 1 //:^)
+	fire_sound = 'sound/borg/machines/laz2.ogg'
+	ammo_type = list(/obj/item/ammo_casing/energy/disabler/borg)
+
+
+/obj/item/ammo_casing/energy/disabler/borg
+	projectile_type = /obj/item/projectile/beam/disabler/borg
+	fire_sound = 'sound/borg/machines/laz2.ogg'
+
+/obj/item/projectile/beam/disabler/borg
+	icon_state = "borglaser"
+
+	//1 is assim, 2 build, 3 attack, 4 shoot
 
 /obj/item/borg_tool/cyborg //fucking run NOW
 	flags = null //not nodrop or that will break borg invs
@@ -28,7 +48,9 @@
 		user << "<span class='warning'>[src] will now assimilate floors instead of building on them.</span>"
 		buildmode = 0
 
-
+/obj/item/borg_tool/New()
+	. = ..()
+	gun = new /obj/item/weapon/gun/energy/disabler/borg(src)
 
 	//modes: 1 = assimilate, 2 = build, 3 = attack
 /obj/item/borg_tool/attack_self(mob/user, params)
@@ -42,9 +64,12 @@
 			user << "<span class='warning'>[src] is now set to DESTROY mode.</span>"
 			force = 18
 		if(3)
+			mode = 4
+			user << "<span class='warning'>[src] is now set to RANGED mode.</span>"
+			force = 2
+		if(4)
 			mode = 1
 			user << "<span class='warning'>[src] is now set to ASSIMILATE mode.</span>"
-			force = 2
 
 /obj/item/borg_tool/proc/sanitycheck(mob/living/carbon/human/I, mob/user) //ok who tf this boi tryina convert smh
 	var/mob/living/carbon/human/H = I //still not QUITE there yet, doesnt fully work
@@ -71,6 +96,8 @@
 					I << "<span class='warning'>You feel an immense jolt of pain as [user] sinks two metallic proboscises into you!.</span>"
 					user << "<span class='warning'>We plunge two metallic proboscises into [I], conversion will begin shortly.</span>"
 					if(do_after(user, convert_time, target = A)) //EXPLANATION: I'm doing convert stuff here as i already have my target and user defined HERE.
+						A.can_dream = 0 //androids do not dream of electric sheep
+						A.reset_perspective()
 						A << "<span class='warning'>As [user] removes the two probiscises, you can feel your insides shifting around as your skin turns a dark grey!.</span>"
 						user << "<span class='warning'>We remove the two proboscises from [I].</span>"
 						A.skin_tone = "albino" //BUG IT DOESNT WORK! fix this later, but it changes the vars but doesnt update appearance
@@ -158,6 +185,14 @@
 			if(istype(I, /obj/machinery/door/airlock) && !removing_airlock)
 				tear_airlock(I, user)
 
+	if(mode == 4) //override proximity check
+		if(world.time >= saved_time + cooldown)
+			saved_time = world.time
+			gun.afterattack(I, user)
+		else
+			user << "<span class='danger'>The [src] is not ready to fire again.</span>"
+
+
 
 /obj/item/borg_tool/proc/tear_airlock(obj/machinery/door/airlock/A, mob/user)
 	removing_airlock = TRUE
@@ -218,7 +253,7 @@
 	..()
 	add_module(new /obj/item/weapon/restraints/handcuffs/cable/zipties/cyborg(src))
 	modules += new /obj/item/weapon/melee/baton/loaded(src)
-	modules += new /obj/item/weapon/gun/energy/disabler/cyborg(src)
+	modules += new /obj/item/weapon/gun/energy/gun/advtaser/cyborg(src)
 	modules += new /obj/item/clothing/mask/gas/borg/cyborg(src)
 	modules += new /obj/item/borg_tool/cyborg(src)
 	emag = new /obj/item/weapon/cookiesynth(src)
@@ -265,6 +300,9 @@
 		M << sound('sound/effects/heartbeat.ogg')
 		var/mob/living/carbon/human/H = M
 		if(do_after(user, 100, target = H))
+			for(var/obj/item/W in H)
+				if(!M.unEquip(W))
+					qdel(W)
 			restrained = 1
 			playsound(loc, 'sound/effects/strapin.ogg', 50, 1, -1)
 			icon_state = "borg_off"
@@ -289,7 +327,9 @@
 			armoroverlay.icon_state = "borgarmour"
 			armoroverlay.layer = ABOVE_MOB_LAYER
 			overlays += armoroverlay
-			sleep(70)
+			sleep(40)
+			playsound(loc, 'sound/borg/machines/convert_table2.ogg', 50, 1, -1)
+			sleep(20)
 			H.equipOutfit(/datum/outfit/borg, visualsOnly = FALSE)
 			overlays -= armoverlay
 			overlays -= armoroverlay
@@ -520,75 +560,62 @@
 	siemens_coefficient = 0
 	unacidable = 1
 	flags = NODROP | MASKINTERNALS
-	var/spammed = 0 //spam prevention
 	flags_inv = HIDEEARS|HIDEFACIALHAIR
-	var/uses = 0
+	var/cooldown2 = 60 //6 second cooldown
+	var/saved_time = 0
 
 /obj/item/clothing/mask/gas/borg/cyborg
 	flags = null
 	name = "intimidator"
 
-/obj/item/clothing/mask/gas/borg/process()
-	sleep(100) // 10 seconds to remove one spam tick
-	if(uses >= 5)
-		spammed = 1
-	if(!spammed)
-		uses -= 1
-	if(spammed) //wait 5 extra seconds, then allow usage
-		sleep(50)
-		spammed = 0
-		return
-
-
 /obj/item/clothing/mask/gas/borg/AltClick(mob/user)
-	if(!spammed)
-		if(ishuman(user))
-			var/phrase = 0	//selects which phrase to use
-			var/phrase_text = null
-			var/phrase_sound = null
-			if(usr.gender == "male" || "neuter")
-				phrase = rand(1,5)
-			if(usr.gender == "female")
-				phrase = rand(6,10)
-			switch(phrase)	//sets the properties of the chosen phrase
-				if(1)
-					phrase_text = "Resistance is futile."
-					phrase_sound = "futile"
-				if(2)
-					phrase_text = "We will add your biological, and technological distinctiveness to our own."
-					phrase_sound = "distinctiveness"
-				if(3)
-					phrase_text = "Your existence as you know it is over."
-					phrase_sound = "existence"
-				if(4)
-					phrase_text = "You will be assimilated."
-					phrase_sound = "assimilated"
-				if(5)
-					phrase_text = "Submit yourself to the collective"
-					phrase_sound = "submit"
+	if(world.time >= saved_time + cooldown2)
+		saved_time = world.time
+		var/phrase = 0	//selects which phrase to use
+		var/phrase_text = null
+		var/phrase_sound = null
+		if(usr.gender == "male" || "neuter")
+			phrase = rand(1,5)
+		if(usr.gender == "female")
+			phrase = rand(6,10)
+		switch(phrase)	//sets the properties of the chosen phrase
+			if(1)
+				phrase_text = "Resistance is futile."
+				phrase_sound = "futile"
+			if(2)
+				phrase_text = "We will add your biological, and technological distinctiveness to our own."
+				phrase_sound = "distinctiveness"
+			if(3)
+				phrase_text = "Your existence as you know it is over."
+				phrase_sound = "existence"
+			if(4)
+				phrase_text = "You will be assimilated."
+				phrase_sound = "assimilated"
+			if(5)
+				phrase_text = "Submit yourself to the collective"
+				phrase_sound = "submit"
 
 	//feminine vox now
-				if(6)
-					phrase_text = "Resistance is futile!"
-					phrase_sound = "futilefem"
-				if(7)
-					phrase_text = "We will add your biological, and technological distinctiveness to our own."
-					phrase_sound = "distinctivenessfem"
-				if(8)
-					phrase_text = "Your existence as you know it is over."
-					phrase_sound = "existencefem"
-				if(9)
-					phrase_text = "You will be assimilated"
-					phrase_sound = "assimilatedfem"
-				if(10)
-					phrase_text = "Submit yourself to the collective"
-					phrase_sound = "submitfem"
-			user.audible_message("[user]'s Voice synthesiser: <font color='green' size='4'><b>[phrase_text]</b></font>")
-			playsound(src.loc, "sound/borg/[phrase_sound].ogg", 100, 0, 4)
-			uses += 1
-	else if(spammed)
-		user << "<span class='warning'>Voice synthesiser on cooldown, please wait.</span>"
-		return
+			if(6)
+				phrase_text = "Resistance is futile!"
+				phrase_sound = "futilefem"
+			if(7)
+				phrase_text = "We will add your biological, and technological distinctiveness to our own."
+				phrase_sound = "distinctivenessfem"
+			if(8)
+				phrase_text = "Your existence as you know it is over."
+				phrase_sound = "existencefem"
+			if(9)
+				phrase_text = "You will be assimilated"
+				phrase_sound = "assimilatedfem"
+			if(10)
+				phrase_text = "Submit yourself to the collective"
+				phrase_sound = "submitfem"
+		user.audible_message("[user]'s Voice synthesiser: <font color='green' size='4'><b>[phrase_text]</b></font>")
+		playsound(src.loc, "sound/borg/[phrase_sound].ogg", 100, 0, 4)
+	else
+		user << "<span class='danger'>[src] is not recharged yet.</span>"
+
 
 
 /turf/closed/wall/borg

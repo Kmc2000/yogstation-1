@@ -732,7 +732,7 @@
 					return
 				stat = UNCONSCIOUS
 				update_canmove()
-				if(!dream.Dream(src))
+				if(!dream.Dream(src) && can_dream)
 					blind_eyes(1)
 
 		else if(health <= config.health_threshold_crit)

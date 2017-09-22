@@ -36,3 +36,4 @@
 	var/remote_view = 0
 
 	var/mob/living/simple_animal/borer/borer //Stores the borer inside someone, if one exists
+	var/can_dream = 1 //can they dream?
