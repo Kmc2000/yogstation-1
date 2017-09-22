@@ -39,7 +39,7 @@
 			force = 5
 		if(2)
 			mode = 3
-			user << "<span class='warning'>[src] is now set to ATTACK mode.</span>"
+			user << "<span class='warning'>[src] is now set to DESTROY mode.</span>"
 			force = 18
 		if(3)
 			mode = 1
