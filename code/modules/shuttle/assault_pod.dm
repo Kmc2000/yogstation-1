@@ -5,6 +5,46 @@
 	width = 7
 	height = 7
 
+/obj/docking_port/mobile/assault_pod/borg //borg landing sphere
+	name = "borg landing sphere"
+	id = "borgpod"
+	dwidth = 3
+	width = 7
+	height = 7
+
+/obj/machinery/computer/camera_advanced/shuttle_docker/syndicate_pod/borg
+	name = "Borg Pod Targetting Device"
+	z_lock = ZLEVEL_STATION
+	shuttleId = "borgpod"
+	shuttlePortId = "borg"
+	shuttlePortName = "borg pod location"
+	x_offset = 0
+	y_offset = 3
+	rotate_action = null
+	target_set = FALSE
+
+/obj/item/device/assault_pod/borg
+	name = "Assault Pod Targetting Device"
+	icon_state = "gangtool-red"
+	item_state = "walkietalkie"
+	desc = "Used to select a landing zone for assault pods."
+	/obj/machinery/computer/camera_advanced/shuttle_docker/syndicate_pod/borg/console
+
+
+/obj/item/device/assault_pod/borg/New()
+	..()
+	console = new /obj/machinery/computer/camera_advanced/shuttle_docker/syndicate_pod/borg/console(src)
+
+/obj/machinery/computer/shuttle/syndicate/drop_pod/borg/console
+	name = "borg pod control"
+	icon = 'icons/obj/terminals.dmi'
+	icon_state = "dorm_available"
+	req_access = null
+	shuttleId = "borgpod"
+	possible_destinations = null
+	clockwork = TRUE //it'd look weird
+
+
 /obj/docking_port/mobile/assault_pod/request()
 	if(z == initial(src.z)) //No launching pods that have already launched
 		return ..()

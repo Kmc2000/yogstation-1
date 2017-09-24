@@ -1,11 +1,12 @@
-#define isborg(A) (is_species(A, /datum/species/zombie))
 #define ROLE_BORG "borg"
+/datum/game_mode
+	var/list/datum/mind/borg_minds = list()
 
 /datum/game_mode/borg
 	name = "borg"
 	config_tag = "borg"
 	antag_flag = ROLE_BORG
-	required_players = 7
+	required_players = 1 //change me
 	required_enemies = 1
 	recommended_enemies = 1
 	restricted_jobs = list("Cyborg", "AI")
@@ -14,47 +15,63 @@
 	var/borgs_to_win = 0
 	var/escaped_borg = 0
 	var/players_per_borg = 7
-
+	var/const/drones_possible = 5
 
 /datum/game_mode/borg/pre_setup() //changing this to the aliens code to spawn a load in maint
-	borgs_to_make = max(round(num_players()/players_per_borg, 1), 1)
-	var/list/datum/mind/borgs = pick_candidate(amount = borgs_to_make)
+	var/n_players = num_players()
+	var/n_drones = min(round(n_players / 10, 1), drones_possible)
+
+	if(antag_candidates.len < n_drones) //In the case of having less candidates than the selected number of agents
+		n_drones = antag_candidates.len
+
+	var/list/datum/mind/borg_drone = pick_candidate(amount = n_drones)
 	update_not_chosen_candidates()
 
-	for(var/j in borgs)
-		var/datum/mind/borg = j
-		borgs += borg
-		borg.special_role = "borg drone"
-		log_game("[borg.key] (ckey) was selected as a borg drone.")
-	return 1
+	for(var/v in borg_drone)
+		var/datum/mind/new_borg = v
+		syndicates += new_borg
+		new_borg.assigned_role = "Syndicate"
+		new_borg.special_role = "Syndicate"//So they actually have a special role/N
+		log_game("[new_borg.key] (ckey) has been selected as a Xel drone")
 
+	return 1
 
 /datum/game_mode/borg/announce()
 	world << "<B>The current game mode is - Borg!</B>"
-	world << "<B>Some crewmembers have gone missing recently, they have become mindless robotic drones! \
-				You must destroy ALL the borg (your station cyborgs are fine however), borg: assimilate the station!</B>"
+	world << "<B>A massive temporal rift has been detected, a large green object suddenly appeared on NT sensors.. \
+				You must destroy ALL the Xel, Xel: assimilate the station!</B>"
 
+//species 4678 (or unathi)</span> and <span class='warning'>Species 4468 (or phytosians) 5618 (or humans)
 
 /datum/game_mode/borg/proc/greet_borg(datum/mind/borg)
-	borg.current << "<font style = 3><B><span class = 'notice'>We are a borg, we live to serve the collective.</B></font>"
-	borg.current << "<b>You were assimilated on your visit to <span class='warning'>installation 3469</span>.</b>"
+	borg.current << "<font style = 3><B><span class = 'notice'>We don't belong here...not in this universe</B></font>"
+	borg.current << "<b>The last thing the collective remembers is a flash of white light and a quiet whooshing sound.</b>"
+	borg.current << "<b>Our ship was damaged, we must construct a new one.</b>"
+	borg.current << "<b>We have detected a medium sized space station nearby, we must use the last remaining energy reserves to plough our damaged ship into their station, and assimilate them.</b>"
 	borg.current << "<b>We can communicate with the collective via :l, you are but a drone, the queen is your overseer </b>"
-	borg.current << "<b> Our priority is the assimilation of <span class='warning'>Species 5618 (or humans)</span>, but subservient species such as <span class='warning'>species 4678 (or unathi)</span> and <span class='warning'>Species 4468 (or phytosians)</span>.</b>"
+	borg.current << "<b>We have detected <span class='warning'>Species 5618 (or humans)</span>on this station, but also some unknown species including silicon based life forms, they should prove useful.</b>"
 	borg.current << "<b>We have a borg tool, it can be used to <span class='warning'>assimilate</span> objects, and people.</b>"
 	borg.current << "<b>Use it on a victim, and after 5 seconds you will inject borg nanites into their bloodstream, making them a <span class='warning'>half drone</span>, once they are a half drone (with grey skin) take them to a conversion table (buildable)</b>"
 	borg.current << "<b>Buckle them into the conversion table and keep them down for 10 seconds, after this they will join the collective as a full drone</b>"
-	borg.current << "<b>KEEP IN MIND, if we fail to fully assimilate the half drone, it will regain its identity (deconvert) after a few minutes.</b>"
+	borg.current << "<b>Half drones are loyal to the collective, we should use them to remain somewhat discreet in your kidnapping of the crew as our drones build a base.</b>"
 	borg.current << "<b>Killing is an absolute last resort, a dead human cannot be assimilated.</b>"
-	borg.current << "<b>We do not require food, but we must recharge ourselves with a <span class='warning'>specialized recharger (buildable)</span> </b>"
-	borg.current << "<b>We must assimilate 70% of the station and 60% of the crew to ensure victory, spreading our seed to centcom is also considered a minor victory.</b>"
-	borg.current << "<b>We can assimilate turfs (walls and floors) by clicking them with the borg tool on ASSIMILATE MODE.</b>"
+	borg.current << "<b>We do not require food, but we can't heal ourselves through conventional means, we require a <span class='warning'>specialized recharger (buildable)</span> </b>"
+	borg.current << "<b>We must construct a new ship in a suitably large room on this station, only begin this when we are ready to take on the crew.</b>"
+	borg.current << "<b>We can assimilate turfs (walls and floors) by clicking them with the borg tool on ASSIMILATE MODE, these are upgradeable by our queen later</b>"
+	borg.current << "<b>Finally, If you are struggling, refer to this guide: LINK GOES HERE.com</b>"
 /datum/game_mode/borg/post_setup()
-	for(var/datum/mind/borg in borgs)
-		greet_borg(borg)
-		borgs += borg
-//		var/obj/item/organ/body_egg/zombie_infection/Z = new(carriermind.current) only halfdrones use the organ
-//		Z.Insert(carriermind.current)
+	for(var/datum/mind/borg_mind in borgs)
+		greet_borg(borg_mind)
+		borgs += borg_mind
+		var/obj/item/organ/body_egg/borgNanites/Z = new(borg_mind.current)
+		Z.Insert(borg_mind.current)
 	..()
+	var/list/turf/borg_spawn = list()
+
+	for(var/obj/effect/landmark/A in landmarks_list)
+		if(A.name == "xel spawn")
+			borg_spawn += get_turf(A)
+			continue
 
 /datum/game_mode/borg/check_finished()
 	return check_borg_victory()
@@ -85,15 +102,13 @@
 /datum/game_mode/proc/add_borg(datum/mind/borg_mind)
 	if(!borg_mind)
 		return
-
-	borgs |= borg_mind
+	borg_minds |= borg_mind
 	borg_mind.special_role = "Borg Drone"
 
 /datum/game_mode/proc/remove_borg(datum/mind/borg_mind)
 	if(!borg_mind)
 		return
-
-	borgs.Remove(borg_mind)
+	borg_minds.Remove(borg_mind)
 	borg_mind.special_role = null
 
 

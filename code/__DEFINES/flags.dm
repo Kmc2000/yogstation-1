@@ -82,6 +82,7 @@
 #define EASYIMPLANTS	26
 #define PROTECTEDEYES	27
 #define PLANT           28
+#define BORG_DRONE		29 //used in borg.dm
 
 #define FLYING	65536
 
