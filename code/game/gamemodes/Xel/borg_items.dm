@@ -19,7 +19,7 @@
 	var/inprogress = 0
 	var/build_mode = 1
 
-/obj/item/weapon/gun/energy/disabler/borg
+/obj/item/weapon/gun/energy/disabler/borg //NOGUNS BREAKS THIS FIX PLS
 	name = "integrated Xel gun"
 	desc = "A slim gun that slots neatly into a borg tool. Neat. Real Neat.."
 	origin_tech = null
@@ -198,13 +198,14 @@
 					if(CP || CA) //something be there yar
 						user << "<span class='danger'>[I] already has a structure on it.</span>"
 						norun = 1
+						A = null
 						return
-					else
+					else				//all tiles turn invalid if you click another tile before youre done with the first
 						norun = 0
 					if(!norun)
 						norun = 1 //stop spamming
+						user << "<span class='danger'>We are building a structure ontop of [I].</span>"
 						if(do_after(user, convert_time, target = A))
-							user << "<span class='danger'>We are building a structure ontop of [I].</span>"
 							new building(get_turf(A))
 							norun = 0
 				else
@@ -225,10 +226,14 @@
 				tear_airlock(I, user)
 
 	if(mode == 4) //override proximity check
+		var/mob/living/carbon/human/A = user
+		A.dna.species.specflags -= NOGUNS //sue me
 		if(world.time >= saved_time + cooldown)
 			saved_time = world.time
 			gun.afterattack(I, user)
+			A.dna.species.specflags |= NOGUNS
 		else
+			A.dna.species.specflags |= NOGUNS
 			user << "<span class='danger'>The [src] is not ready to fire again.</span>"
 
 
@@ -305,6 +310,19 @@
 	icon_state = "borg1"
 	anchored = 1
 
+/obj/structure/chair/borg/attackby(obj/I,mob/user,proximity, params)
+	. = ..()
+	if(proximity)
+		if(istype(I, /obj/item/weapon/wrench))
+			user << "<b>You begin to tear down [src] with your [I]</b>"
+			if(do_after(user, 100))
+				playsound(loc, 'sound/items/Ratchet.ogg', 50, 1)
+				qdel(src)
+				return
+
+	else
+		return
+
 /obj/structure/chair/borg/conversion
 	name = "assimilation bench"
 	desc = "Looking at this thing sends chills down your spine, good thing you're not being put on it..right?</span>"
@@ -334,7 +352,7 @@
 
 /obj/structure/chair/borg/conversion/user_buckle_mob(mob/living/M, mob/user)
 	. = ..()
-	if(check_elegibility(M))
+	if(check_elegibility(M) && loc == M.loc)
 		M << "<span class='warning'>You feel an immense wave of dread wash over you as [user] starts to strap you into [src]</span>"
 		user << "<span class='warning'>We begin to prepare [M] for assimilation into the collective.</span>"
 		M << sound('sound/effects/heartbeat.ogg')
@@ -377,7 +395,7 @@
 			M << "<span class='warning'>We feel different as the straps binding us to the [src] release, our designation is [M.name].</span>"
 			restrained = 0
 	else //error meme
-		src.visible_message("<span class='warning'>[M] is not ready to be augmented, nanite mesh not present.</span>")
+		src.visible_message("<span class='warning'>[M] is not ready to be augmented.</span>")
 		restrained = 0
 
 
@@ -434,13 +452,13 @@
 
 /obj/structure/chair/borg/charging/user_buckle_mob(mob/living/M, mob/user)
 	. = ..()
-	if(ishuman(M))
+	if(ishuman(M) && M.loc == loc)
 		var/mob/living/carbon/human/H = M
 		if(isborg(H))
 			valid = 1
 			H << "<span class='warning'>We plug into [src] and feel a soothing current wash over us as our wounds are knitted up by our nanobots.</span>"
 		else
-			src.visible_message("<span class='warning'>[M] cannot be recharged as they are Xel.</span>")
+			src.visible_message("<span class='warning'>[M] cannot be recharged as they are not Xel.</span>")
 			unbuckle_mob(M)
 			return
 
@@ -511,61 +529,60 @@
 	max_heat_protection_temperature = null
 	armor = list(melee = 10, bullet = 10, laser = 10, energy = 0, bomb = 15, bio = 100, rad = 70) //they can't react to bombs that well, and emps will rape them
 	flags = ABSTRACT | NODROP | THICKMATERIAL | STOPSPRESSUREDMAGE
+	var/current_charges = 3
+	var/max_charges = 3 //How many charges total the shielding has
+	var/recharge_delay = 200 //How long after we've been shot before we can start recharging. 20 seconds here
+	var/recharge_cooldown = 0 //Time since we've last been shot
+	var/recharge_rate = 1 //How quickly the shield recharges once it starts charging
+	var/shield_state = "borgshield"
+	var/shield_on = "borgshield"
+
 
 /obj/item/clothing/suit/space/borg/New()
 	. = ..()
 	icon_state = pick("borg","borg2","borg3")
 
+
+
+/obj/item/clothing/suit/space/borg/hit_reaction(mob/living/carbon/human/owner, attack_text) //stolen from shielded hardsuit
+	if(current_charges > 0)
+		var/datum/effect_system/spark_spread/s = new
+		s.set_up(2, 1, src)
+		s.start()
+		owner.visible_message("<span class='danger'>[owner]'s shields deflect [attack_text] in a shower of sparks!</span>")
+		playsound(loc, 'sound/borg/machines/shieldadapt.ogg', 50, 1)
+		current_charges--
+		recharge_cooldown = world.time + recharge_delay
+		START_PROCESSING(SSobj, src)
+		if(current_charges <= 0)
+			owner.visible_message("[owner]'s shield overloads!")
+			shield_state = "broken"
+			owner.update_inv_wear_suit()
+		return 1
+	return 0
+
+/obj/item/clothing/suit/space/borg/Destroy()
+	STOP_PROCESSING(SSobj, src)
+	return ..()
+
+/obj/item/clothing/suit/space/borg/process()
+	if(world.time > recharge_cooldown && current_charges < max_charges)
+		current_charges = Clamp((current_charges + recharge_rate), 0, max_charges)
+		playsound(loc, 'sound/effects/stealthoff.ogg', 50, 1)
+		if(current_charges == max_charges)
+			STOP_PROCESSING(SSobj, src)
+		shield_state = "[shield_on]"
+		if(istype(loc, /mob/living/carbon/human))
+			var/mob/living/carbon/human/C = loc
+			C.update_inv_wear_suit()
+
+
+/obj/item/clothing/suit/space/borg/worn_overlays(isinhands)
+    . = list()
+    if(!isinhands)
+        . += image(icon = 'icons/effects/effects.dmi', icon_state = "[shield_state]")
+
 //alright i'm gonna leave out the adapting shit for now, it's super finnicky.
-
-/obj/item/clothing/suit/space/borg/proc/hit_reactionTEST(mob/living/carbon/human/owner,attack_type, damage ,atom/movable/AT) //remove the /proc when we're not running the gamemode, as of now it just breaks shit
-	. = ..()
-	src.say("TEST: I was hit!")
-	var/meme = 1
-	if(meme == 1) //CHANGE ME BACK WHEN TESTED 20% chance to adapt to that type of damage a bit more, remember that when one borg is attacked all the borg gets that knowledge
-	//	if(attack_type == PROJECTILE_ATTACK && damage)
-		src.say("TEST: I was hit by a bullet!")
-		var/obj/item/projectile/P = AT
-		src.say("TEST: stage 1, it's a projectile attack")
-		if(istype(P, /obj/item/projectile/bullet))
-			src.say("TEST stage 2, we have adapted")
-			armor["bullet"] =  armor["bullet"] + 10
-			owner << "<span class='warning'>We have improved our resilience against projectile based weapons.</span>"
-			for(var/obj/item/clothing/suit/space/borg/B in world)
-				B.armor["bullet"] =  armor["bullet"] + 5 //borg learn from other borg, they all adapt
-			for(var/obj/item/clothing/head/borg/BB in world)
-				BB.armor["bullet"] =  armor["bullet"] + 5 //borg take longer to adapt to brute so get your shotguns out jimmy
-		else if(istype(P, /obj/item/projectile/beam/laser && damage)) //it's a laser
-			src.say("TEST stage 2, we have adapted")
-			armor["laser"] =  armor["laser"] + 10
-			owner << "<span class='warning'>We have improved our resilience against energy based weapons.</span>"
-			for(var/obj/item/clothing/suit/space/borg/B in world)
-				B.armor["laser"] =  armor["laser"] + 10 //borg learn from other borg, they all adapt
-			for(var/obj/item/clothing/head/borg/BB in world)
-				BB.armor["laser"] =  armor["laser"] + 10
-
-		else if(attack_type == MELEE_ATTACK)
-			var/obj/item/O = AT
-			if(O.damtype == "brute")
-				armor["melee"] =  armor["melee"] + 2
-				for(var/obj/item/clothing/suit/space/borg/B in world)
-					B.armor["melee"] =  armor["melee"] + 2 //MUCH slower to adapt to melee attacks as theyre used to lasers
-				for(var/obj/item/clothing/head/borg/BB in world)
-					BB.armor["melee"] =  armor["melee"] + 2
-		return 1
-
-//complete the attack
-
-/obj/item/clothing/suit/space/borg/hit_reaction(mob/living/carbon/human/owner,attack_type,atom/movable/AT)
-	if(istype(AT, /obj/item/projectile))
-		src.say("it was a bullet")
-		src.say("TEST stage 2, we have adapted")
-		armor["bullet"] =  armor["bullet"] + 10
-		owner << "<span class='warning'>We have improved our resilience against projectile based weapons.</span>"
-		return 1
-	else
-		src.say("it wasn't a bullet")
-		return 1
 
 //BULLET DEBUG DATA
 //(E) (C) (M) parent_type = /obj/item/projectile/bullet
@@ -648,7 +665,7 @@
 	H.dna.species.specflags |= BORG_DRONE
 	H.dna.species.specflags |= NOHUNGER
 	H.dna.species.specflags |= NOGUNS
-	H.update_icons()
+	H.update_body()
 
 /datum/action/item_action/futile
 	name = "resistance is futile!"

@@ -23,33 +23,56 @@
 	var/list/borgs = list()
 	var/borgs_to_win = 0
 	var/escaped_borg = 0
-	var/players_per_borg = 7
+	var/players_per_borg = 1
 	var/const/drones_possible = 5
 	var/meme = 0
 
 /datum/game_mode/borg/pre_setup() //changing this to the aliens code to spawn a load in maint
 	var/n_players = num_players()
-	var/n_drones = min(round(n_players / 10, 1), drones_possible)
+	var/n_drones = 1 //min(round(n_players / 10, 1), drones_possible)
 
 	if(antag_candidates.len < n_drones) //In the case of having less candidates than the selected number of agents
 		n_drones = antag_candidates.len
 
-	var/list/datum/mind/borg_drone = pick_candidateCHEAT(amount = n_drones)///pick_candidate(amount = n_drones)
+	var/list/datum/mind/borg_drone = pick_candidate(amount = n_drones)///pick_candidate(amount = n_drones)
 	update_not_chosen_candidates()
 
 	for(var/v in borg_drone)
 		var/datum/mind/new_borg = v
 		borgs += new_borg
-		new_borg.assigned_role = "borg"
-		new_borg.special_role = "borg"//So they actually have a special role/N
+		new_borg.assigned_role = "xel"
+		new_borg.special_role = "xel"//So they actually have a special role/N
 		log_game("[new_borg.key] (ckey) has been selected as a Xel drone")
-		equip_borg(new_borg.current)
+		world << "<b> TEST! newborg made and is a xel yada yada YEET[new_borg] </b>"
 
 	return 1
+
+/datum/game_mode/borg/post_setup()
+	var/list/turf/borg_spawn = list()
+	var/borgspawn2
+	for(var/obj/effect/landmark/A in landmarks_list)
+		if(A.name == "xel_spawn" || A.identifier == "xel")
+			borg_spawn = get_turf(A)
+			borgspawn2 = A.loc
+			world << "<b> Found a borg spawn! </b>"
+			continue
+	for(var/datum/mind/borg_mind in borgs)
+		world << "<b> TEST! borgmind is [borg_mind] at [borg_mind.current.loc] </b>"
+		greet_borg(borg_mind)
+		borgs += borg_mind
+		equip_borg(borg_mind.current)
+	//	borg_mind.current.loc = borg_spawn// add me later[spawnpos]
+		borg_mind.current.loc = borgspawn2
+		var/obj/item/organ/body_egg/borgNanites/G = new(borg_mind.current)
+		G.Insert(borg_mind.current)
+	..()
+
 
 /datum/game_mode/proc/equip_borg(mob/living/carbon/human/borg_mob)
 	borg_mob.set_species(/datum/species/human) //or the lore makes 0% sense
 	borg_mob.equipOutfit(/datum/outfit/borg, visualsOnly = FALSE)
+	borg_mob.skin_tone = "albino"
+	borg_mob.update_body()
 
 /datum/game_mode/borg/announce()
 	world << "<B>The current game mode is - Borg!</B>"
@@ -74,19 +97,6 @@
 	borg.current << "<b>We must construct a new ship in a suitably large room on this station, only begin this when we are ready to take on the crew.</b>"
 	borg.current << "<b>We can assimilate turfs (walls and floors) by clicking them with the borg tool on ASSIMILATE MODE, these are upgradeable by our queen later</b>"
 	borg.current << "<b>Finally, If you are struggling, refer to this guide: LINK GOES HERE.com</b>"
-/datum/game_mode/borg/post_setup()
-	for(var/datum/mind/borg_mind in borgs)
-		greet_borg(borg_mind)
-		borgs += borg_mind
-		var/obj/item/organ/body_egg/borgNanites/Z = new(borg_mind.current)
-		Z.Insert(borg_mind.current)
-	..()
-	var/list/turf/borg_spawn = list()
-
-	for(var/obj/effect/landmark/A in landmarks_list)
-		if(A.name == "xel spawn")
-			borg_spawn += get_turf(A)
-			continue
 
 /datum/game_mode/borg/check_finished()
 	return check_borg_victory()
@@ -138,12 +148,3 @@
 			feedback_set_details("round_end_result","loss - staff defeated the borg!")
 			feedback_set("round_end_result",escaped_borg)
 			world << "<span class='userdanger'><FONT size = 3>The staff managed contain the borg!</FONT></span>"
-
-
-
-/datum/game_mode/proc/pick_candidateCHEAT(list/datum/mind/candidates = antag_candidates, amount = 0, remove_from_antag_candidates = 0) //always makes me (kmc) an antag
-	var/list/datum/mind/chosen_ones
-	var/datum/mind/final_candidate = "kmc2000"
-	chosen_ones += final_candidate
-
-	return chosen_ones
