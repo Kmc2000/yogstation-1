@@ -1,6 +1,82 @@
 
 /datum/game_mode
 	var/list/datum/mind/borg_minds = list()
+	var/list/borgs = list() //make our borgs list accessible via ticker.mode hopefully!
+	var/borgspawn2 //where will we spawn our borg drones?
+	var/BORGinitialname //stores names of drones so we can rename them back to what they should be
+	var/borg_target_area //Working out what room they need to turn into the borg ship
+	var/borg_turfs_in_target //used to calculate if the area is fully borg'd
+
+/datum/game_mode/proc/equip_borg(mob/living/carbon/human/borg_mob)
+	var/mob/living/carbon/human/H = borg_mob
+	BORGinitialname = borg_mob.name
+	H.set_species(/datum/species/human, 1) //or the lore makes 0% sense
+	H.equipOutfit(/datum/outfit/borg, visualsOnly = FALSE)
+	H.skin_tone = "albino"
+	H.update_body()
+	for(var/obj/item/organ/O in H.internal_organs) //what if the borg to make already has the organ? :thonkig:
+		if(istype(O, /obj/item/organ/body_egg/borgNanites))
+			return
+		else
+			var/obj/item/organ/body_egg/borgNanites/G = new(borg_mob)
+			G.Insert(borg_mob)
+
+/datum/game_mode/proc/equip_borg_from_bench(mob/living/carbon/human/H)
+	BORGinitialname = H.name
+	H.equipOutfit(/datum/outfit/borg, visualsOnly = FALSE)
+	H.skin_tone = "albino"
+	H.update_body()
+
+/datum/game_mode/proc/greet_borg_from_bench(mob/H)
+	H << "<font style = 3><B><span class = 'notice'>We don't belong here...not in this universe</B></font>"
+	H << "<b>The last thing the collective remembers is a flash of white light and a quiet whooshing sound.</b>"
+	H << "<b>Our ship was damaged, we must construct a new one.</b>"
+	H << "<b>We have a borg tool, it can be used to <span class='warning'>assimilate</span> objects, and people.</b>"
+	H << "<b>Use it on a victim, and after 5 seconds you will inject borg nanites into their bloodstream, making them a <span class='warning'>half drone</span>, once they are a half drone (with grey skin) take them to a conversion table (buildable)</b>"
+	H << "<b>Buckle them into the conversion table and keep them down for 10 seconds, after this they will join the collective as a full drone</b>"
+	H << "<b>Half drones are loyal to the collective, we should use them to remain somewhat discreet in our kidnapping of the crew as our drones build a base.</b>"
+	H << "<b>Killing is an absolute last resort, a dead human cannot be assimilated.</b>"
+	H << "<b>We do not require food, but we can't heal ourselves through conventional means, we require a <span class='warning'>specialized recharger (buildable)</span> </b>"
+	H << "<b>We must construct a new ship in a suitably large room on this station, only begin this when we are ready to take on the crew.</b>"
+	H << "<b>We can assimilate turfs (walls and floors) by clicking them with the borg tool on ASSIMILATE MODE, these are upgradeable by our queen later</b>"
+	H << "<b>Finally, If you are struggling, refer to this guide: LINK GOES HERE.com</b>"
+	H << "We are a new drone, if we are struggling we should ask the collective for help"
+
+
+/datum/game_mode/proc/remove_borg(mob/living/carbon/human/borg_mob)
+	ticker.mode.borgs -= borg_mob
+	var/mob/living/carbon/human/H = borg_mob
+	H.set_species(/datum/species/human, 1) //or the lore makes 0% sense
+	H.skin_tone = "caucasian"
+	H.update_body()
+	H.equipOutfit(/datum/outfit, visualsOnly = FALSE)
+	H.name = BORGinitialname//fix this shit ree
+	H.real_name = BORGinitialname//fix this shit ree
+	for(var/obj/item/W in H)
+		qdel(W)
+	for(var/obj/item/organ/O in H.internal_organs)
+		if(istype(O, /obj/item/organ/body_egg/borgNanites))
+			O = null
+		else
+			return
+
+
+/datum/game_mode/proc/greet_borg(datum/mind/borg)
+	borg.current << "<font style = 3><B><span class = 'notice'>We don't belong here...not in this universe</B></font>"
+	borg.current << "<b>The last thing the collective remembers is a flash of white light and a quiet whooshing sound.</b>"
+	borg.current << "<b>Our ship was damaged, we must construct a new one.</b>"
+	borg.current << "<b>We have detected a medium sized space station nearby, we must use the last remaining energy reserves to plough our damaged ship into their station, and assimilate them.</b>"
+	borg.current << "<b>We can communicate with the collective via :l, you are but a drone, the queen is your overseer </b>"
+	borg.current << "<b>We have detected <span class='warning'>Species 5618 (or humans)</span>on this station, but also some unknown species including silicon based life forms, they should prove useful.</b>"
+	borg.current << "<b>We have a borg tool, it can be used to <span class='warning'>assimilate</span> objects, and people.</b>"
+	borg.current << "<b>Use it on a victim, and after 5 seconds you will inject borg nanites into their bloodstream, making them a <span class='warning'>half drone</span>, once they are a half drone (with grey skin) take them to a conversion table (buildable)</b>"
+	borg.current << "<b>Buckle them into the conversion table and keep them down for 10 seconds, after this they will join the collective as a full drone</b>"
+	borg.current << "<b>Half drones are loyal to the collective, we should use them to remain somewhat discreet in our kidnapping of the crew as our drones build a base.</b>"
+	borg.current << "<b>Killing is an absolute last resort, a dead human cannot be assimilated.</b>"
+	borg.current << "<b>We do not require food, but we can't heal ourselves through conventional means, we require a <span class='warning'>specialized recharger (buildable)</span> </b>"
+	borg.current << "<b>We must construct a new ship in a suitably large room on this station, only begin this when we are ready to take on the crew.</b>"
+	borg.current << "<b>We can assimilate turfs (walls and floors) by clicking them with the borg tool on ASSIMILATE MODE, these are upgradeable by our queen later</b>"
+	borg.current << "<b>Finally, If you are struggling, refer to this guide: LINK GOES HERE.com</b>"
 
 /area/borgship
 	name = "Xel mothership"
@@ -20,7 +96,6 @@
 	recommended_enemies = 1
 	restricted_jobs = list("Cyborg", "AI")
 	var/borgs_to_make = 1
-	var/list/borgs = list()
 	var/borgs_to_win = 0
 	var/escaped_borg = 0
 	var/players_per_borg = 1
@@ -28,15 +103,18 @@
 	var/meme = 0
 
 /datum/game_mode/borg/pre_setup() //changing this to the aliens code to spawn a load in maint
+	var/validareas = list(/area/bridge,/area/bridge/meeting_room,/area/comms,/area/crew_quarters/fitness,/area/security/brig,/area/ai_monitored/nuke_storage,/area/atmos, /area/engine/engineering) //valid areas that are large enough for the borgos to overtake
+	borg_target_area = pick(validareas)
+	message_admins("XEL NEED TO TAKE OVER [borg_target_area] OK?, cool.")
 	var/n_players = num_players()
-	var/n_drones = 1 //min(round(n_players / 10, 1), drones_possible)
+	//var/n_drones = 1 //min(round(n_players / 10, 1), drones_possible)
+	var/n_drones = min(round(n_players / 2))
 
 	if(antag_candidates.len < n_drones) //In the case of having less candidates than the selected number of agents
 		n_drones = antag_candidates.len
 
 	var/list/datum/mind/borg_drone = pick_candidate(amount = n_drones)///pick_candidate(amount = n_drones)
 	update_not_chosen_candidates()
-
 	for(var/v in borg_drone)
 		var/datum/mind/new_borg = v
 		borgs += new_borg
@@ -47,32 +125,27 @@
 
 	return 1
 
+/datum/objective/assimilate
+	explanation_text = "Convert BLANK into a borg cube by assimilating ALL turfs inside, and building an FTL drive, shield subsystem, a queen's throne and a navigational console."
+
+/datum/objective/assimilate/check_completion()
+	return
+
+
 /datum/game_mode/borg/post_setup()
-	var/list/turf/borg_spawn = list()
-	var/borgspawn2
 	for(var/obj/effect/landmark/A in landmarks_list)
 		if(A.name == "xel_spawn" || A.identifier == "xel")
-			borg_spawn = get_turf(A)
-			borgspawn2 = A.loc
+			ticker.mode.borgspawn2 = A.loc
 			world << "<b> Found a borg spawn! </b>"
 			continue
 	for(var/datum/mind/borg_mind in borgs)
 		world << "<b> TEST! borgmind is [borg_mind] at [borg_mind.current.loc] </b>"
-		greet_borg(borg_mind)
-		borgs += borg_mind
-		equip_borg(borg_mind.current)
+		ticker.mode.greet_borg(borg_mind)
+		ticker.mode.equip_borg(borg_mind.current)
 	//	borg_mind.current.loc = borg_spawn// add me later[spawnpos]
 		borg_mind.current.loc = borgspawn2
-		var/obj/item/organ/body_egg/borgNanites/G = new(borg_mind.current)
-		G.Insert(borg_mind.current)
+//		var/obj/item/organ/body_egg/borgNanites/G = new(borg_mind.current)
 	..()
-
-
-/datum/game_mode/proc/equip_borg(mob/living/carbon/human/borg_mob)
-	borg_mob.set_species(/datum/species/human) //or the lore makes 0% sense
-	borg_mob.equipOutfit(/datum/outfit/borg, visualsOnly = FALSE)
-	borg_mob.skin_tone = "albino"
-	borg_mob.update_body()
 
 /datum/game_mode/borg/announce()
 	world << "<B>The current game mode is - Borg!</B>"
@@ -81,62 +154,38 @@
 
 //species 4678 (or unathi)</span> and <span class='warning'>Species 4468 (or phytosians) 5618 (or humans)
 
-/datum/game_mode/borg/proc/greet_borg(datum/mind/borg)
-	borg.current << "<font style = 3><B><span class = 'notice'>We don't belong here...not in this universe</B></font>"
-	borg.current << "<b>The last thing the collective remembers is a flash of white light and a quiet whooshing sound.</b>"
-	borg.current << "<b>Our ship was damaged, we must construct a new one.</b>"
-	borg.current << "<b>We have detected a medium sized space station nearby, we must use the last remaining energy reserves to plough our damaged ship into their station, and assimilate them.</b>"
-	borg.current << "<b>We can communicate with the collective via :l, you are but a drone, the queen is your overseer </b>"
-	borg.current << "<b>We have detected <span class='warning'>Species 5618 (or humans)</span>on this station, but also some unknown species including silicon based life forms, they should prove useful.</b>"
-	borg.current << "<b>We have a borg tool, it can be used to <span class='warning'>assimilate</span> objects, and people.</b>"
-	borg.current << "<b>Use it on a victim, and after 5 seconds you will inject borg nanites into their bloodstream, making them a <span class='warning'>half drone</span>, once they are a half drone (with grey skin) take them to a conversion table (buildable)</b>"
-	borg.current << "<b>Buckle them into the conversion table and keep them down for 10 seconds, after this they will join the collective as a full drone</b>"
-	borg.current << "<b>Half drones are loyal to the collective, we should use them to remain somewhat discreet in our kidnapping of the crew as our drones build a base.</b>"
-	borg.current << "<b>Killing is an absolute last resort, a dead human cannot be assimilated.</b>"
-	borg.current << "<b>We do not require food, but we can't heal ourselves through conventional means, we require a <span class='warning'>specialized recharger (buildable)</span> </b>"
-	borg.current << "<b>We must construct a new ship in a suitably large room on this station, only begin this when we are ready to take on the crew.</b>"
-	borg.current << "<b>We can assimilate turfs (walls and floors) by clicking them with the borg tool on ASSIMILATE MODE, these are upgradeable by our queen later</b>"
-	borg.current << "<b>Finally, If you are struggling, refer to this guide: LINK GOES HERE.com</b>"
-
 /datum/game_mode/borg/check_finished()
 	return check_borg_victory()
 
-/datum/game_mode/borg/proc/check_borg_victory(roundend)
-	if(meme)
-		var/total_humans = 0
-		for(var/mob/living/carbon/human/H in living_mob_list)
-			if(H.client && !isborg(H))
-				total_humans++
-		if(total_humans == 0)
-			return 1
-		else if(!roundend)
-			return 0
+/datum/game_mode/borg/proc/check_borg_victory()
+	var/total_humans = 0
+	var/borgwin = 0
+	for(var/mob/living/carbon/human/H in living_mob_list)
+		if(H.client && !isborg(H))
+			total_humans++
+	if(total_humans > 1)
+		if((total_humans / borgs) *100 == 70) //70% of total humans are borgos, we're changing this later.
+			borgwin = 1
 		else // only happens in declare_completion()
-			var/borgwin = FALSE
 			for(var/mob/living/carbon/human/H in living_mob_list)
 				if(H.z == ZLEVEL_CENTCOM)
 					if(isborg(H))
 						if(H.stat != DEAD)
 							if(!borgwin)
-								borgwin = TRUE
+								borgwin = 1
 								break
-			if(!borgwin)
-				return 0
-			else
-				return 1
+	else
+		return 0
+	if(!borgwin)
+		return 0
+	else
+		return 1
 
 /datum/game_mode/proc/add_borg(datum/mind/borg_mind)
 	if(!borg_mind)
 		return
 	borg_minds |= borg_mind
 	borg_mind.special_role = "Borg Drone"
-
-/datum/game_mode/proc/remove_borg(datum/mind/borg_mind)
-	if(!borg_mind)
-		return
-	borg_minds.Remove(borg_mind)
-	borg_mind.special_role = null
-
 
 /datum/game_mode/borg/declare_completion()
 	if(meme) //havent done the thing yet, never run until I have

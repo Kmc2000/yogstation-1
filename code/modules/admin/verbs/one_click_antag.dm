@@ -572,23 +572,27 @@
 //		if(agentcount < 3)
 //			return 0
 		//Let's find the spawn locations
-		var/list/turf/borg_spawn = list()
-		for(var/obj/effect/landmark/A in landmarks_list)
-			if(A.name == "xel spawn")
-				borg_spawn += get_turf(A)
-				continue
-
+	var/borgspawn3
+	for(var/obj/effect/landmark/A in landmarks_list)
+		if(A.name == "xel_spawn" || A.identifier == "xel")
+			borgspawn3 = A.loc
+			continue
+	for(var/datum/mind/borg_mind in ticker.mode.borgs)
+		ticker.mode.borg.greet_borg(borg_mind)
+		ticker.mode.borg.borgs += borg_mind
+		ticker.mode.borg.equip_borg(borg_mind.current)
+	//	borg_mind.current.loc = borg_spawn// add me later[spawnpos]
+		borg_mind.current.loc = borgspawn3
+		var/obj/item/organ/body_egg/borgNanites/G = new(borg_mind.current)
+		G.Insert(borg_mind.current)
 		var/spawnpos = 1 //Decides where they'll spawn. 1=queen, nominally.
 
 		for(var/mob/c in chosen)
-			if(spawnpos > borg_spawn.len)
-				spawnpos = 2 //Ran out of spawns. Let's loop back to the first non-leader position
 			var/mob/living/carbon/human/new_character=makeBody(c)
 		//	new_character.mind.make_Xel(borg_spawn[spawnpos])
-			ticker.mode.borg += new_character
 			new_character.special_role = "borg"
-			ticker.mode.borg.borgs += new_character
-			log_game("[new_borg.key] (ckey) has been selected as a Xel drone")
+			ticker.mode.borgs += new_character
+			log_game("[new_character.key] (ckey) has been selected as a Xel drone")
 			ticker.mode.borg.equip_borg(new_borg.current)
 			spawnpos++
 		return 1

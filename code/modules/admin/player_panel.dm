@@ -661,6 +661,19 @@
 					dat += "<td><A href='?priv_msg=[blob.key]'>PM</A></td></tr>"
 			dat += "</table>"
 
+		if(istype(ticker.mode, /datum/game_mode/borg))
+			dat += "<br><table cellspacing=5><tr><td><B>Xel drones:</B></td><td></td><td></td></tr>"
+			for(var/datum/mind/borg in ticker.mode.borgs)
+				var/mob/M = borg.current
+				if(M)
+					dat += "<tr><td><a href='?_src_=holder;adminplayeropts=\ref[M]'>[M.real_name]</a>[M.client ? "" : " <i>(ghost)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
+					dat += "<td><A href='?priv_msg=[M.ckey]'>PM</A></td>"
+					dat += "<td><A href='?_src_=holder;adminplayerobservefollow=\ref[M]'>FLW</a></td>"
+					dat += "<td><A HREF='?_src_=holder;traitor=\ref[M]'>Show Objective</A></td></tr>"
+				else
+					dat += "<tr><td><a href='?_src_=vars;Vars=\ref[borg]'>[borg.name]([borg.key])</a><i>Drone body destroyed!</i></td>"
+					dat += "<td><A href='?priv_msg=[borg.key]'>PM</A></td></tr>"
+			dat += "</table>"
 
 		if(istype(ticker.mode, /datum/game_mode/monkey))
 			var/datum/game_mode/monkey/mode = ticker.mode

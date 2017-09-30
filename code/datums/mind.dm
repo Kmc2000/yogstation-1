@@ -167,6 +167,14 @@
 	remove_objectives()
 	remove_antag_equip()
 
+/datum/mind/proc/remove_xel()
+	if(src in ticker.mode.borgs)
+		ticker.mode.borgs -= src
+	special_role = null
+	var/mob/living/carbon/human/H = current
+	ticker.mode.remove_borg(H)
+	remove_objectives()
+
 /datum/mind/proc/remove_wizard()
 	if(src in ticker.mode.wizards)
 		ticker.mode.wizards -= src
@@ -301,7 +309,8 @@
 		"traitor", // "traitorchan",
 		"cyberman",
 		"monkey",
-		"clockcult"
+		"clockcult",
+		"xel"
 	)
 	var/text = ""
 
@@ -432,6 +441,25 @@
 			text += "|Disabled in Prefs"
 
 		sections["clockcult"] = text
+
+		/** XEL COLLECTIVE **/ //SKREE
+		text = "xel"
+	//	if (ticker.mode.config_tag=="borg")
+	//		text = uppertext(text)
+		text = "<i><b>[text]</b></i>: "
+		if (src in ticker.mode.borgs)
+			text += "<b>DRONE</b>|<a href='?src=\ref[src];xel=clear'>employee</a>"
+			text += "<br><a href='?src=\ref[src];xel=toship'>To mothership</a>, <a href='?src=\ref[src];xel=makexel'>Equip</a>."
+		else
+			text += "<a href='?src=\ref[src];xel=makexel'>xel drone</a>|<b>employee</b>"
+
+		if(current && current.client && (ROLE_BORG in current.client.prefs.be_special))
+			text += "|Enabled in Prefs"
+		else
+			text += "|Disabled in Prefs"
+
+		sections["xel"] = text
+
 
 		/** WIZARD ***/
 		text = "wizard"
@@ -659,7 +687,6 @@
 	else
 		text += "|Disabled in Prefs"
 	sections["devil"] = text
-
 
 	/** SILICON ***/
 
@@ -1448,6 +1475,30 @@
 				message_admins("[key_name_admin(usr)] has cyberman'ed [current].")
 				log_admin("[key_name(usr)] has cyberman'ed [current].")
 
+	else if(href_list["xel"]) //SKREE
+		switch(href_list["xel"])
+			if("clear")
+				if(src in ticker.mode.borgs)
+					ticker.mode.borgs -= src
+					src << "<span class='userdanger'>The voices in our head go silent, we are not longer a Xel!</span>"
+					remove_xel(src)
+					message_admins("[key_name_admin(usr)] has de-Xel'ed [current].")
+					log_admin("[key_name(usr)] has de-Xel'ed [current].")
+			if("makexel")
+				if(!ishuman(current))
+					usr << "<span class='warning'>This only works on humans!</span>"
+					return
+				make_xel(src)
+				current << "<span class='userdanger'>You start to hear weird voices as a new organ shifts in your chest. You're a xel drone now!</span>"
+				message_admins("[key_name_admin(usr)] has Xel'ed [current].")
+				log_admin("[key_name(usr)] has Xel'ed [current].")
+			if("toship")
+				message_admins("[key_name_admin(usr)] has sent [current] to the xel mothership.")
+				log_admin("[key_name(usr)] has sent [current] to the xel mothership.")
+				send_to_xel_ship(src)
+
+
+
 	else if (href_list["common"])
 		switch(href_list["common"])
 			if("undress")
@@ -1505,6 +1556,19 @@
 		ticker.mode.forge_traitor_objectives(src)
 		ticker.mode.finalize_traitor(src)
 		ticker.mode.greet_traitor(src)
+
+/datum/mind/proc/make_xel()
+	if(quiet_round)
+		return
+	if(!(src in ticker.mode.borgs))
+		ticker.mode.borgs += src
+		special_role = "Xel"
+		ticker.mode.greet_borg(src)
+		ticker.mode.equip_borg(current)
+		current.loc = ticker.mode.borgspawn2
+/datum/mind/proc/send_to_xel_ship()
+	current.loc = ticker.mode.borgspawn2
+	current << "You appear out of thin air!"
 
 /datum/mind/proc/make_Nuke(turf/spawnloc,nuke_code,leader=0, telecrystals = TRUE)
 	if(quiet_round)

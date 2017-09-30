@@ -18,6 +18,53 @@
 	var/saved_time = 0
 	var/inprogress = 0
 	var/build_mode = 1
+	var/norun = 0 //stops infinite chair spam
+
+
+/obj/item/borg_tool/New()
+	. = ..()
+	gun = new /obj/item/weapon/gun/energy/disabler/borg(src)
+	building = /obj/structure/chair/borg/conversion
+
+/obj/item/borg_checker
+	name = "area checker"
+	desc = "reee."
+	item_state = "borgtool"
+	origin_tech = null
+	icon_state = "borgtool"
+	var/locname
+	var/announced
+	var/turfs_in_a
+
+/obj/item/borg_checker/CtrlClick(mob/user)
+	user << "we're checking eligibiliy!"
+	var/area/A = src.loc
+	locname = initial(A.name)
+	if(istype(A, ticker.mode.borg_target_area))
+		src.visible_message("A is the target area")
+		for(var/turf/B in A)
+			turfs_in_a ++
+			if(istype(B, /turf/open/floor/borg || /turf/closed/wall/borg))
+				ticker.mode.borg_turfs_in_target ++
+	if(ticker.mode.borg_turfs_in_target > turfs_in_a)
+		if(!announced)
+			announced = 1
+			var/message = "[locname] has been assimilated. Build ship components to complete area takeover."
+			var/ping = "<font color='green' size='2'><B><i>Xel collective</i> HIVEMIND SUBSYSTEM: [message]</B></font></span>"
+			for(var/mob/living/carbon/human/I in world)
+				if(!isborg(I))
+					return
+				else if(I in ticker.mode.borgs && isborg(I))
+					I << ping
+					return
+	else
+		src.visible_message("nope")
+		announced = 0
+		return
+
+
+
+
 
 /obj/item/weapon/gun/energy/disabler/borg //NOGUNS BREAKS THIS FIX PLS
 	name = "integrated Xel gun"
@@ -43,34 +90,32 @@
 	flags = null //not nodrop or that will break borg invs
 
 /obj/item/borg_tool/CtrlClick(mob/user)
-	playsound(src.loc, 'sound/borg/machines/mode.ogg', 100, 1)
-	if(mode == 2 && build_mode == 1) //add a for later when we add tech level ups and shit
-		user << "<span class='warning'>[src] will now create charging alcoves</span>" //expand on me!
-		building = /obj/structure/chair/borg/charging //for now it just makes it build a borg chair, nothing special
-		build_mode = 2
-	else if(mode == 2 && build_mode == 2)
-		user << "<span class='warning'>[src] will now create Conversion suites</span>" //expand on me!
-		building = /obj/structure/chair/borg/conversion //for now it just makes it build a borg chair, nothing special
-		build_mode = 1
-
+	if(!norun)
+		user << sound('sound/borg/machines/mode.ogg')
+		if(mode == 2 && build_mode == 1) //add a for later when we add tech level ups and shit
+			user << "<span class='warning'>[src] will now create charging alcoves</span>" //expand on me!
+			building = /obj/structure/chair/borg/charging //for now it just makes it build a borg chair, nothing special
+			build_mode = 2
+		else if(mode == 2 && build_mode == 2)
+			user << "<span class='warning'>[src] will now create Conversion suites</span>" //expand on me!
+			building = /obj/structure/chair/borg/conversion //for now it just makes it build a borg chair, nothing special
+			build_mode = 1
+	else
+		user << "<span class='warning'>[src] is still building something!</span>"
 
 /obj/item/borg_tool/AltClick(mob/user)
-	playsound(src.loc, 'sound/borg/machines/mode.ogg', 100, 1)
-	if(mode == 2 && !buildmode) //add a for later when we add tech level ups and shit
-		user << "<span class='warning'>[src] will now create structures.</span>" //expand on me!
-		buildmode = 1
-	else if(mode == 2 && buildmode)
-		user << "<span class='warning'>[src] will now assimilate floors instead of building on them.</span>"
-		buildmode = 0
-
-/obj/item/borg_tool/New()
-	. = ..()
-	gun = new /obj/item/weapon/gun/energy/disabler/borg(src)
-	building = /obj/structure/chair/borg/conversion
-
+	if(!norun)
+		user << sound('sound/borg/machines/mode.ogg')
+		if(mode == 2 && !buildmode) //add a for later when we add tech level ups and shit
+			user << "<span class='warning'>[src] will now create structures.</span>" //expand on me!
+			buildmode = 1
+		else if(mode == 2 && buildmode)
+			user << "<span class='warning'>[src] will now assimilate floors instead of building on them.</span>"
+			buildmode = 0
 	//modes: 1 = assimilate, 2 = build, 3 = attack
 /obj/item/borg_tool/attack_self(mob/user, params)
-	playsound(src.loc, 'sound/borg/machines/mode.ogg', 100, 1)
+	playsound(src.loc, 'sound/borg/machines/mode.ogg', 100)
+	norun = 0
 	switch(mode)
 		if(1)
 			mode = 2
@@ -87,6 +132,7 @@
 		if(4)
 			mode = 1
 			user << "<span class='warning'>[src] is now set to ASSIMILATE mode.</span>"
+			force = 0
 
 /obj/item/borg_tool/proc/sanitycheck(mob/living/carbon/human/H, mob/user) //ok who tf this boi tryina convert smh
 	for(var/obj/item/organ/O in H.internal_organs)
@@ -100,7 +146,7 @@
 
 /obj/item/borg_tool/afterattack(atom/I, mob/user, proximity)
 	. = ..()
-	if(proximity)
+	if(proximity && !norun)
 		if(mode == 1) //assimilate
 			if(ishuman(I) && isliving(I))
 			 //the collective only wants living people as drones, please! ALSO only humans / humanoids become half drones, borgxenos etc. just get straight borged
@@ -137,6 +183,10 @@
 						I << "<span class='warning'>We. Are. Borg.. We serve the collective.</span>"
 						sleep(30)
 						I << "<font style = 3><B><span class = 'notice'>We are now a borg! we live to serve the collective. We should obey the higher drones until we are fully assimilated.</B></font>"
+						ticker.mode.greet_borg_from_bench(A)
+						ticker.mode.borgs += A //doing this here so that halfdrones are considered antags
+
+
 			else if(issilicon(I) && isliving(I))
 				I << "<span class='warning'>Your systems limiter blares an alarm as [user] rips into you with their [src]!.</span>"
 				user << "<span class='warning'>We rip into [I] with [src], conversion will begin shortly.</span>"
@@ -185,13 +235,16 @@
 						A.laws = new /datum/ai_laws/borg_override
 						A.set_zeroth_law("<span class='danger'>ERROR ER0RR $R0RRO$!R41 Assimilate the crew into the Xel collective, their resistance will be futile.</span>")
 						A << sound('sound/borg/overmind/silicon_assimilate.ogg')
+						ticker.mode.greet_borg_from_bench(A)
+						ticker.mode.borgs += A
 						sleep(60) //so we dont get overlapping sounds
 						for(var/mob/living/silicon/B in world)
 							B << sound('sound/borg/overmind/silicon_resist.ogg') //intimidating message telling them to not resist
-		if(mode == 2)//build mode
+		if(mode == 2 && !norun)//build mode
 			if(istype(I, /turf/open))
 				var/turf/open/A = I
-				var/norun = 0
+				norun = 0
+				var/canrun = 0
 				if(buildmode)
 					var/obj/structure/CP = locate() in A
 					var/obj/machinery/CA = locate() in A
@@ -199,10 +252,12 @@
 						user << "<span class='danger'>[I] already has a structure on it.</span>"
 						norun = 1
 						A = null
+						canrun = 0
 						return
 					else				//all tiles turn invalid if you click another tile before youre done with the first
 						norun = 0
-					if(!norun)
+						canrun = 1
+					if(canrun)
 						norun = 1 //stop spamming
 						user << "<span class='danger'>We are building a structure ontop of [I].</span>"
 						if(do_after(user, convert_time, target = A))
@@ -224,6 +279,9 @@
 		if(mode == 3) //attack mode
 			if(istype(I, /obj/machinery/door/airlock) && !removing_airlock)
 				tear_airlock(I, user)
+
+		else
+			user << "<span class='danger'>[src] is not ready yet!.</span>"
 
 	if(mode == 4) //override proximity check
 		var/mob/living/carbon/human/A = user
@@ -277,7 +335,8 @@
 	robot_skin = "xel"
 	update_icons()
 	update_headlamp()
-
+	ticker.mode.greet_borg(src)
+	ticker.mode.borgs += src
 
 /obj/item/weapon/robot_module/xel
 	name = "assimilator module"
@@ -297,11 +356,9 @@
 	modules += new /obj/item/weapon/gun/energy/gun/advtaser/cyborg(src)
 	modules += new /obj/item/clothing/mask/gas/borg/cyborg(src)
 	modules += new /obj/item/borg_tool/cyborg(src)
+	modules += new /obj/item/device/radio/headset/borg/alt/cyborg(src)
 	emag = new /obj/item/weapon/cookiesynth(src)
 	fix_modules()
-
-
-
 
 //structures!
 /obj/structure/chair/borg
@@ -353,6 +410,7 @@
 /obj/structure/chair/borg/conversion/user_buckle_mob(mob/living/M, mob/user)
 	. = ..()
 	if(check_elegibility(M) && loc == M.loc)
+		playsound(loc, 'sound/effects/strapin.ogg', 50, 1, -1)
 		M << "<span class='warning'>You feel an immense wave of dread wash over you as [user] starts to strap you into [src]</span>"
 		user << "<span class='warning'>We begin to prepare [M] for assimilation into the collective.</span>"
 		M << sound('sound/effects/heartbeat.ogg')
@@ -362,7 +420,6 @@
 				if(!M.unEquip(W))
 					qdel(W)
 			restrained = 1
-			playsound(loc, 'sound/effects/strapin.ogg', 50, 1, -1)
 			icon_state = "borg_off"
 			M.do_jitter_animation(50)
 			src.visible_message("<span class='warning'>[M] looks terrified as they lay on [src]</span>")
@@ -373,9 +430,6 @@
 			playsound(loc, 'sound/borg/machines/convert_table.ogg', 50, 1, -1)
 			src.visible_message("<span class='warning'>[M] screams in agony as the [src] forces grotesque metal parts onto their grey flesh!</span>")
 			playsound(loc, 'sound/effects/megascream.ogg', 50, 1, -1) //https://youtu.be/5QvgLlFyeok?t=1m48s
-			H.skin_tone = "albino"
-			H.eye_color = "red"
-			H.update_body(0)
 			icon_state = "borg_on"
 			var/image/armoverlay = image('icons/obj/chairs.dmi')
 			armoverlay.icon_state = "borg_arms"
@@ -388,7 +442,7 @@
 			sleep(40)
 			playsound(loc, 'sound/borg/machines/convert_table2.ogg', 50, 1, -1)
 			sleep(20)
-			H.equipOutfit(/datum/outfit/borg, visualsOnly = FALSE)
+			ticker.mode.equip_borg_from_bench(M)
 			overlays -= armoverlay
 			overlays -= armoroverlay
 			icon_state = "borg_off"
@@ -397,6 +451,18 @@
 	else //error meme
 		src.visible_message("<span class='warning'>[M] is not ready to be augmented.</span>")
 		restrained = 0
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /obj/structure/chair/borg/conversion/user_unbuckle_mob(mob/living/buckled_mob/M)
@@ -421,7 +487,7 @@
 	buildstacktype = null
 	item_chair = null // if null it can't be picked up
 	creates_scraping_noise = FALSE
-	var/cooldown = 15
+	var/cooldown = 12
 	var/saved_time = 0
 	var/cooldown2 = 120 //music loop cooldowns
 	var/saved_time2 = 0
@@ -463,7 +529,7 @@
 			return
 
 	else
-		src.visible_message("<span class='warning'>[M] cannot be recharged as they are not human.</span>")
+		src.visible_message("<span class='warning'>[M] cannot be recharged.</span>")
 		unbuckle_mob(M)
 		return
 
@@ -504,6 +570,55 @@
 
 #undef START_TIMER
 
+
+/obj/item/device/radio/headset/borg/alt
+	name = "cortical radio implant"
+	desc = "an inbuilt radio that the Xel use to communicate with one another, CTRL click it to access the headset interface, and use the action button up top to message the collective."
+	icon_state = "xelheadset"
+	item_state = "xelheadset"
+	flags = NODROP
+	actions_types = list(/datum/action/item_action/xelchat)
+	unacidable = 1
+
+/obj/item/device/radio/headset/borg/alt/cyborg
+	flags = null
+
+/obj/item/device/radio/headset/borg/alt/attackby()
+	return //no screwdrivering the keys out for you
+
+/obj/item/device/radio/headset/borg/alt/CtrlClick(mob/user) //they cant take it off if it gets ION'D to reset it
+	var/mob/M = usr
+	if(user.canUseTopic(src))
+		return attack_hand(M)
+	return
+
+/datum/action/item_action/xelchat
+	name = "collective chat"
+
+/obj/item/device/radio/headset/borg/alt/ui_action_click(mob/user, actiontype)
+	if(actiontype == /datum/action/item_action/xelchat)
+		collective_chat(user)
+
+/obj/item/device/radio/headset/borg/proc/collective_chat(mob/user)
+	if(!user)
+		return
+	var/message = stripped_input(user,"Communicate with the collective.","Send Message")
+	var/mob/living/carbon/human/B = user
+	if(!message || !isborg(B))
+		return
+	var/ping = "<font color='green' size='2'><B><i>Xel collective</i> [usr.real_name]: [message]</B></font></span>"
+	for(var/mob/living/carbon/human/I in world)
+		if(!isborg(I))
+			return
+		else if(I in ticker.mode.borgs && isborg(I))
+			I << ping
+			continue
+
+	for(var/mob/M in dead_mob_list)
+		var/link = FOLLOW_LINK(M, user)
+		M << "[link] [ping]"
+	log_game("[key_name(user)] Messaged Xel collective: [message].")
+
 /obj/item/clothing/under/borg
 	name = "grey flesh"
 	desc = "Grotesque grey flesh with veins visibly poking through."
@@ -536,6 +651,7 @@
 	var/recharge_rate = 1 //How quickly the shield recharges once it starts charging
 	var/shield_state = "borgshield"
 	var/shield_on = "borgshield"
+	allowed = list(/obj/item/device/flashlight,/obj/item/weapon/tank/internals)
 
 
 /obj/item/clothing/suit/space/borg/New()
@@ -641,7 +757,7 @@
 	//id = /obj/item/weapon/card/id/gold
 //	belt = /obj/item/device/pda/captain
 	glasses = /obj/item/clothing/glasses/night/borg
-//	ears = /obj/item/device/radio/headset/heads/captain/alt
+	ears = /obj/item/device/radio/headset/borg/alt
 	uniform =  /obj/item/clothing/under/borg
 	suit = /obj/item/clothing/suit/space/borg
 	shoes = /obj/item/clothing/shoes/magboots/borg
@@ -665,6 +781,7 @@
 	H.dna.species.specflags |= BORG_DRONE
 	H.dna.species.specflags |= NOHUNGER
 	H.dna.species.specflags |= NOGUNS
+	H.dna.species.specflags |= NOBREATH
 	H.update_body()
 
 /datum/action/item_action/futile

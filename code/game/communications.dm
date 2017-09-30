@@ -162,6 +162,7 @@ var/const/ENG_FREQ = 1357 //engineering, coloured orange in chat window
 var/const/SEC_FREQ = 1359 //security, coloured red in chat window
 var/const/CENTCOM_FREQ = 1337 //centcom frequency, coloured grey in chat window
 var/const/AIPRIV_FREQ = 1447 //AI private, colored magenta in chat window
+var/const/XEL_FREQ = 7079 //xelspeak
 
 /* filters */
 var/const/RADIO_TO_AIRALARM = "1"
