@@ -1565,7 +1565,6 @@
 		special_role = "Xel"
 		ticker.mode.greet_borg(src)
 		ticker.mode.equip_borg(current)
-		current.loc = ticker.mode.borgspawn2
 /datum/mind/proc/send_to_xel_ship()
 	current.loc = ticker.mode.borgspawn2
 	current << "You appear out of thin air!"

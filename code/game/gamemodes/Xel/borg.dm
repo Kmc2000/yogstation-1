@@ -5,7 +5,11 @@
 	var/borgspawn2 //where will we spawn our borg drones?
 	var/BORGinitialname //stores names of drones so we can rename them back to what they should be
 	var/borg_target_area //Working out what room they need to turn into the borg ship
-	var/borg_turfs_in_target //used to calculate if the area is fully borg'd
+	var/borg_completion_assimilation = 0 //have the borgs assimilated their area?
+	var/borg_completion_construction = 0 //have the borgs built their shit in the room yet?
+	var/borg_machines_room_has_ftl = 0 //has the target room get an FTL?
+	var/borg_machines_room_has_nav = 0 //has it got a navcomp?
+	var/borg_machines_room_has_throne = 0 //has it got throne?
 
 /datum/game_mode/proc/equip_borg(mob/living/carbon/human/borg_mob)
 	var/mob/living/carbon/human/H = borg_mob
@@ -14,6 +18,8 @@
 	H.equipOutfit(/datum/outfit/borg, visualsOnly = FALSE)
 	H.skin_tone = "albino"
 	H.update_body()
+	if(!H in borgs)
+		borgs += src
 	for(var/obj/item/organ/O in H.internal_organs) //what if the borg to make already has the organ? :thonkig:
 		if(istype(O, /obj/item/organ/body_egg/borgNanites))
 			return
@@ -26,6 +32,8 @@
 	H.equipOutfit(/datum/outfit/borg, visualsOnly = FALSE)
 	H.skin_tone = "albino"
 	H.update_body()
+	if(!H in borgs)
+		borgs += src
 
 /datum/game_mode/proc/greet_borg_from_bench(mob/H)
 	H << "<font style = 3><B><span class = 'notice'>We don't belong here...not in this universe</B></font>"
@@ -92,8 +100,8 @@
 	config_tag = "borg"
 	antag_flag = ROLE_BORG
 	required_players = 1 //change me
-	required_enemies = 1
-	recommended_enemies = 1
+	required_enemies = 2//3
+	recommended_enemies = 5
 	restricted_jobs = list("Cyborg", "AI")
 	var/borgs_to_make = 1
 	var/borgs_to_win = 0
@@ -103,12 +111,12 @@
 	var/meme = 0
 
 /datum/game_mode/borg/pre_setup() //changing this to the aliens code to spawn a load in maint
-	var/validareas = list(/area/bridge,/area/bridge/meeting_room,/area/comms,/area/crew_quarters/fitness,/area/security/brig,/area/ai_monitored/nuke_storage,/area/atmos, /area/engine/engineering) //valid areas that are large enough for the borgos to overtake
+//	var/validareas = /area/ai_monitored/nuke_storage //change me
+	var/validareas = list(/area/bridge,/area/bridge/meeting_room,/area/tcommsat,/area/crew_quarters/fitness,/area/security/brig,/area/ai_monitored/nuke_storage,/area/atmos, /area/engine/engineering) //valid areas that are large enough for the borgos to overtake
 	borg_target_area = pick(validareas)
-	message_admins("XEL NEED TO TAKE OVER [borg_target_area] OK?, cool.")
 	var/n_players = num_players()
-	//var/n_drones = 1 //min(round(n_players / 10, 1), drones_possible)
-	var/n_drones = min(round(n_players / 2))
+	var/n_drones = 1 //min(round(n_players / 10, 1), drones_possible)
+//	var/n_drones = 5
 
 	if(antag_candidates.len < n_drones) //In the case of having less candidates than the selected number of agents
 		n_drones = antag_candidates.len
@@ -120,9 +128,6 @@
 		borgs += new_borg
 		new_borg.assigned_role = "xel"
 		new_borg.special_role = "xel"//So they actually have a special role/N
-		log_game("[new_borg.key] (ckey) has been selected as a Xel drone")
-		world << "<b> TEST! newborg made and is a xel yada yada YEET[new_borg] </b>"
-
 	return 1
 
 /datum/objective/assimilate
@@ -142,6 +147,13 @@
 		world << "<b> TEST! borgmind is [borg_mind] at [borg_mind.current.loc] </b>"
 		ticker.mode.greet_borg(borg_mind)
 		ticker.mode.equip_borg(borg_mind.current)
+		var/datum/objective/O
+	//	var/area/A = get_area(borg_target_area)
+	//	var/locname = initial(A.name)
+		O = new /datum/objective/assimilate()
+		message_admins("XEL NEED TO TAKE OVER [borg_target_area] OK?, cool.")
+		O.explanation_text = "Convert [borg_target_area] into a borg cube by assimilating ALL turfs inside, and building an FTL drive, shield subsystem, a queen's throne and a navigational console."
+		borg_mind.objectives += O
 	//	borg_mind.current.loc = borg_spawn// add me later[spawnpos]
 		borg_mind.current.loc = borgspawn2
 //		var/obj/item/organ/body_egg/borgNanites/G = new(borg_mind.current)
@@ -154,12 +166,37 @@
 
 //species 4678 (or unathi)</span> and <span class='warning'>Species 4468 (or phytosians) 5618 (or humans)
 
-/datum/game_mode/borg/check_finished()
-	return check_borg_victory()
+//datum/game_mode/borg/check_finished()
+//	return check_borg_victory()
 
 /datum/game_mode/borg/proc/check_borg_victory()
+//	var/borgwin = 0
+//	if(ticker.mode.borg_completion_assimilation == 1)
+//		return 1
+//	else
+//		return 0
+
+/datum/game_mode/proc/auto_declare_completion_borg()
+	if(borgs.len || (ticker && istype(ticker.mode,/datum/game_mode/borg)) )
+		var/text = "<br><font size=3><b>The Xel drones were:</b></font>"
+		for(var/datum/mind/xel in borgs)
+			text += printplayer(xel)
+
+		text += "<br>"
+		world << text
+
+/datum/game_mode/borg/declare_completion()
+	if(ticker.mode.borg_completion_assimilation && ticker.mode.borg_machines_room_has_ftl && ticker.mode.borg_machines_room_has_nav && ticker.mode.borg_machines_room_has_throne) //add in the other once i've made their structures
+		feedback_set_details("round_end_result","Major Victory - Xel")
+		feedback_set("round_end_result")
+		world << "<span class='greentext'>The Xel collective constructed a new cube! they now live to spread their evil throughout the sector!</span>"
+	else
+		feedback_set_details("round_end_result","loss - staff defeated the borg!")
+		feedback_set("round_end_result",escaped_borg)
+		world << "<span class='userdanger'><FONT size = 3>The staff managed contain the borg!</FONT></span>"
+
+/*
 	var/total_humans = 0
-	var/borgwin = 0
 	for(var/mob/living/carbon/human/H in living_mob_list)
 		if(H.client && !isborg(H))
 			total_humans++
@@ -176,24 +213,4 @@
 								break
 	else
 		return 0
-	if(!borgwin)
-		return 0
-	else
-		return 1
-
-/datum/game_mode/proc/add_borg(datum/mind/borg_mind)
-	if(!borg_mind)
-		return
-	borg_minds |= borg_mind
-	borg_mind.special_role = "Borg Drone"
-
-/datum/game_mode/borg/declare_completion()
-	if(meme) //havent done the thing yet, never run until I have
-		if(check_borg_victory(1))
-			feedback_set_details("round_end_result","win - the borg win")
-			feedback_set("round_end_result",escaped_borg)
-			world << "<span class='userdanger'><FONT size = 3>The borg have assimilated the station and its crew!</FONT></span>"
-		else
-			feedback_set_details("round_end_result","loss - staff defeated the borg!")
-			feedback_set("round_end_result",escaped_borg)
-			world << "<span class='userdanger'><FONT size = 3>The staff managed contain the borg!</FONT></span>"
+*/

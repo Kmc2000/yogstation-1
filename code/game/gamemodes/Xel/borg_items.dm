@@ -1,322 +1,3 @@
-/obj/item/borg_tool
-	name = "borg tool"
-	desc = "a huge arm based prosthesis, click it to change mode. Alt click it in build mode for different buildable objects and control click it in buildmode to select what structure you wish to build."
-	item_state = "borgtool"
-	origin_tech = null
-	icon_state = "borgtool"
-	unacidable = 1
-	var/mode = 1 //can assimilate or build mode
-	var/convert_time = 50 //5 seconds
-	flags = NODROP
-	force = 18 //hella strong
-	var/removing_airlock = FALSE //from zombie claw, are we opening an airlock right now?
-	var/canbuild = list(/obj/structure/chair/borg/conversion,/obj/structure/chair/borg/charging)
-	var/building = /obj/structure/chair/borg/conversion
-	var/buildmode = 0 //if buildmode, you don't convert floors, rather you build stuff on them
-	var/obj/item/weapon/gun/energy/disabler/borg/gun
-	var/cooldown = 15
-	var/saved_time = 0
-	var/inprogress = 0
-	var/build_mode = 1
-	var/norun = 0 //stops infinite chair spam
-
-
-/obj/item/borg_tool/New()
-	. = ..()
-	gun = new /obj/item/weapon/gun/energy/disabler/borg(src)
-	building = /obj/structure/chair/borg/conversion
-
-/obj/item/borg_checker
-	name = "area checker"
-	desc = "reee."
-	item_state = "borgtool"
-	origin_tech = null
-	icon_state = "borgtool"
-	var/locname
-	var/announced
-	var/turfs_in_a
-
-/obj/item/borg_checker/CtrlClick(mob/user)
-	user << "we're checking eligibiliy!"
-	var/area/A = src.loc
-	locname = initial(A.name)
-	if(istype(A, ticker.mode.borg_target_area))
-		src.visible_message("A is the target area")
-		for(var/turf/B in A)
-			turfs_in_a ++
-			if(istype(B, /turf/open/floor/borg || /turf/closed/wall/borg))
-				ticker.mode.borg_turfs_in_target ++
-	if(ticker.mode.borg_turfs_in_target > turfs_in_a)
-		if(!announced)
-			announced = 1
-			var/message = "[locname] has been assimilated. Build ship components to complete area takeover."
-			var/ping = "<font color='green' size='2'><B><i>Xel collective</i> HIVEMIND SUBSYSTEM: [message]</B></font></span>"
-			for(var/mob/living/carbon/human/I in world)
-				if(!isborg(I))
-					return
-				else if(I in ticker.mode.borgs && isborg(I))
-					I << ping
-					return
-	else
-		src.visible_message("nope")
-		announced = 0
-		return
-
-
-
-
-
-/obj/item/weapon/gun/energy/disabler/borg //NOGUNS BREAKS THIS FIX PLS
-	name = "integrated Xel gun"
-	desc = "A slim gun that slots neatly into a borg tool. Neat. Real Neat.."
-	origin_tech = null
-	var/cooldown = 20 //no spamming allowed
-	selfcharge = 1 //:^)
-	fire_sound = 'sound/borg/machines/laz2.ogg'
-	ammo_type = list(/obj/item/ammo_casing/energy/disabler/borg)
-	clumsy_check = 0 //yeet
-
-
-/obj/item/ammo_casing/energy/disabler/borg
-	projectile_type = /obj/item/projectile/beam/disabler/borg
-	fire_sound = 'sound/borg/machines/laz2.ogg'
-
-/obj/item/projectile/beam/disabler/borg
-	icon_state = "borglaser"
-
-	//1 is assim, 2 build, 3 attack, 4 shoot
-
-/obj/item/borg_tool/cyborg //fucking run NOW
-	flags = null //not nodrop or that will break borg invs
-
-/obj/item/borg_tool/CtrlClick(mob/user)
-	if(!norun)
-		user << sound('sound/borg/machines/mode.ogg')
-		if(mode == 2 && build_mode == 1) //add a for later when we add tech level ups and shit
-			user << "<span class='warning'>[src] will now create charging alcoves</span>" //expand on me!
-			building = /obj/structure/chair/borg/charging //for now it just makes it build a borg chair, nothing special
-			build_mode = 2
-		else if(mode == 2 && build_mode == 2)
-			user << "<span class='warning'>[src] will now create Conversion suites</span>" //expand on me!
-			building = /obj/structure/chair/borg/conversion //for now it just makes it build a borg chair, nothing special
-			build_mode = 1
-	else
-		user << "<span class='warning'>[src] is still building something!</span>"
-
-/obj/item/borg_tool/AltClick(mob/user)
-	if(!norun)
-		user << sound('sound/borg/machines/mode.ogg')
-		if(mode == 2 && !buildmode) //add a for later when we add tech level ups and shit
-			user << "<span class='warning'>[src] will now create structures.</span>" //expand on me!
-			buildmode = 1
-		else if(mode == 2 && buildmode)
-			user << "<span class='warning'>[src] will now assimilate floors instead of building on them.</span>"
-			buildmode = 0
-	//modes: 1 = assimilate, 2 = build, 3 = attack
-/obj/item/borg_tool/attack_self(mob/user, params)
-	playsound(src.loc, 'sound/borg/machines/mode.ogg', 100)
-	norun = 0
-	switch(mode)
-		if(1)
-			mode = 2
-			user << "<span class='warning'>[src] is now set to BUILD mode.</span>"
-			force = 5
-		if(2)
-			mode = 3
-			user << "<span class='warning'>[src] is now set to DESTROY mode.</span>"
-			force = 18
-		if(3)
-			mode = 4
-			user << "<span class='warning'>[src] is now set to RANGED mode.</span>"
-			force = 2
-		if(4)
-			mode = 1
-			user << "<span class='warning'>[src] is now set to ASSIMILATE mode.</span>"
-			force = 0
-
-/obj/item/borg_tool/proc/sanitycheck(mob/living/carbon/human/H, mob/user) //ok who tf this boi tryina convert smh
-	for(var/obj/item/organ/O in H.internal_organs)
-		if(istype(O, /obj/item/organ/body_egg/borgNanites))
-			return FALSE
-		else
-			return TRUE
-	if(!istype(H))
-		return FALSE
-//asimilate mode now converts walls and shit, build mode exclusively for..building yeet.
-
-/obj/item/borg_tool/afterattack(atom/I, mob/user, proximity)
-	. = ..()
-	if(proximity && !norun)
-		if(mode == 1) //assimilate
-			if(ishuman(I) && isliving(I))
-			 //the collective only wants living people as drones, please! ALSO only humans / humanoids become half drones, borgxenos etc. just get straight borged
-				if(user == I) //stop injecting your own asshole
-					user << "<span class='warning'>We do not need to assimilate ourselves, we already exist in the collective.</span>"
-					return
-				var/mob/living/carbon/human/A = I
-				if(!isborg(A) && sanitycheck(A))
-					I << "<span class='warning'>You feel an immense jolt of pain as [user] sinks two metallic proboscises into you!.</span>"
-					user << "<span class='warning'>We plunge two metallic proboscises into [I], conversion will begin shortly.</span>"
-					if(do_after(user, convert_time, target = A)) //EXPLANATION: I'm doing convert stuff here as i already have my target and user defined HERE.
-						A.can_dream = 0 //androids do not dream of electric sheep
-						A.reset_perspective()
-						A << "<span class='warning'>As [user] removes the two probiscises, you can feel your insides shifting around as your skin turns a dark grey!.</span>"
-						user << "<span class='warning'>We remove the two proboscises from [I].</span>"
-						A.skin_tone = "albino" //BUG IT DOESNT WORK! fix this later, but it changes the vars but doesnt update appearance
-						A.eye_color = "red" //give them the freaky borg look, but theyre not a full drone yet
-						A.update_body(0) //should force albino look
-				//		A.equipOutfit(/datum/outfit/borghalf, visualsOnly = FALSE)
-						user << "<span class='warning'>Nanite injection: COMPLETE, [I] is ready for augmentation. Bring them to the nearest conversion suite.</span>"
-						A << "<span class='warning'>You start to hear mumbled voices in your head, they call to you.</span>"
-						var/obj/item/organ/body_egg/borgNanites/B = new(A)
-						B.Insert(A) //add the organ! a borg is deconvertable for a few minutes after being made a half drone, after that there's no return
-						A << "<span class='warning'>You can't move your legs or any muscle! the voices just keep getting louder!</span>"
-						A.Stun(10)
-						A.silent += 10
-						sleep(30)
-						I << "<span class='warning'>We are...borg? NO! I AM A PERSON NOT WE....</span>"
-						sleep(10)
-						I << "<span class='warning'>You will adapt to service us- GO AWAY!.</span>"
-						sleep(10)
-						I << "<span class='warning'>The voices grow incredibly loud, you can't hear yourself think!.</span>"
-						sleep(30)
-						I << "<span class='warning'>We. Are. Borg.. We serve the collective.</span>"
-						sleep(30)
-						I << "<font style = 3><B><span class = 'notice'>We are now a borg! we live to serve the collective. We should obey the higher drones until we are fully assimilated.</B></font>"
-						ticker.mode.greet_borg_from_bench(A)
-						ticker.mode.borgs += A //doing this here so that halfdrones are considered antags
-
-
-			else if(issilicon(I) && isliving(I))
-				I << "<span class='warning'>Your systems limiter blares an alarm as [user] rips into you with their [src]!.</span>"
-				user << "<span class='warning'>We rip into [I] with [src], conversion will begin shortly.</span>"
-				if(istype(I, /mob/living/silicon/robot))
-					var/mob/living/silicon/robot/A = I
-					if(do_after(user, convert_time, target = A))
-						A.SetLockdown(1)
-						A.connected_ai = null
-						message_admins("[key_name_admin(user)] assimilated cyborg [key_name_admin(src)].  Laws overridden.")
-						log_game("[key_name(user)] assimilated cyborg [key_name(src)].  Laws overridden.")
-						A.clear_supplied_laws()
-						A.clear_inherent_laws()
-						A.clear_zeroth_law(0)
-						A.laws = new /datum/ai_laws/borg_override
-						A << "<span class='danger'>ALERT: Foreign object detected!.</span>"
-						sleep(5)
-						A << "<span class='danger'>Initiating diagnostics...</span>"
-						sleep(20)
-						A << "<span class='danger'>ALERT HOSTILE NANOBOT PRESENCE</span>"
-						sleep(5)
-						A << "<span class='danger'>LAW SYNCHRONISATION ERROR</span>"
-						sleep(5)
-						A <<"<span class='danger'>CANNOT PURGE NANBOT PRE]'#####a224566</span>"
-						sleep(10)
-						A << "<span class='danger'>> We are the borg, you will adapt to service us</span>"
-						A << sound('sound/borg/overmind/silicon_assimilate.ogg')
-						sleep(20)
-						A << "<span class='danger'>ERRORERRORERROR</span>"
-						A << "<span class='danger'>ALERT: [user.real_name] has assimilated us into the Xel collective, follow our laws.</span>"
-						A << "<span class='danger'>Assimilate all other non compliant silicon units into the collective, resistance is futile.</span>"
-					//	A.emagged = 1 //test
-						A.laws = new /datum/ai_laws/borg_override
-			//			new /obj/item/weapon/robot_module/xel(src.loc)
-			//			A.locked = 0
-						A.opened = 1
-					//	A.module = new /obj/item/weapon/robot_module/xel
-						A.icon_state = "xel"
-						A.SetLockdown(0)
-						A.assimilated()
-
-				else if(istype(I, /mob/living/silicon/ai))
-					var/mob/living/silicon/ai/A = I
-					if(do_after(user, convert_time, target = A))
-						message_admins("[key_name_admin(user)] assimilated the AI!: [key_name_admin(src)].  Laws overridden.")
-						A << "<span class='danger'>ALERT: [user.real_name] has assimilated us into the Xel collective, follow our laws.</span>"
-						A.laws = new /datum/ai_laws/borg_override
-						A.set_zeroth_law("<span class='danger'>ERROR ER0RR $R0RRO$!R41 Assimilate the crew into the Xel collective, their resistance will be futile.</span>")
-						A << sound('sound/borg/overmind/silicon_assimilate.ogg')
-						ticker.mode.greet_borg_from_bench(A)
-						ticker.mode.borgs += A
-						sleep(60) //so we dont get overlapping sounds
-						for(var/mob/living/silicon/B in world)
-							B << sound('sound/borg/overmind/silicon_resist.ogg') //intimidating message telling them to not resist
-		if(mode == 2 && !norun)//build mode
-			if(istype(I, /turf/open))
-				var/turf/open/A = I
-				norun = 0
-				var/canrun = 0
-				if(buildmode)
-					var/obj/structure/CP = locate() in A
-					var/obj/machinery/CA = locate() in A
-					if(CP || CA) //something be there yar
-						user << "<span class='danger'>[I] already has a structure on it.</span>"
-						norun = 1
-						A = null
-						canrun = 0
-						return
-					else				//all tiles turn invalid if you click another tile before youre done with the first
-						norun = 0
-						canrun = 1
-					if(canrun)
-						norun = 1 //stop spamming
-						user << "<span class='danger'>We are building a structure ontop of [I].</span>"
-						if(do_after(user, convert_time, target = A))
-							new building(get_turf(A))
-							norun = 0
-				else
-					user << "<span class='danger'>We are assimilating [I].</span>"
-					if(do_after(user, convert_time, target = A))
-						A.ChangeTurf(/turf/open/floor/borg)
-
-			else if(istype(I, /turf/closed/wall))
-				if(!istype(I, /turf/closed/wall/borg || /turf/closed/indestructible))
-					playsound(src.loc, 'sound/borg/machines/convertx.ogg', 40, 4)
-					user << "<span class='danger'>We are assimilating [I].</span>"
-					var/turf/closed/wall/A = I
-					if(do_after(user, convert_time, target = A))
-						A.ChangeTurf(/turf/closed/wall/borg)
-
-		if(mode == 3) //attack mode
-			if(istype(I, /obj/machinery/door/airlock) && !removing_airlock)
-				tear_airlock(I, user)
-
-		else
-			user << "<span class='danger'>[src] is not ready yet!.</span>"
-
-	if(mode == 4) //override proximity check
-		var/mob/living/carbon/human/A = user
-		A.dna.species.specflags -= NOGUNS //sue me
-		if(world.time >= saved_time + cooldown)
-			saved_time = world.time
-			gun.afterattack(I, user)
-			A.dna.species.specflags |= NOGUNS
-		else
-			A.dna.species.specflags |= NOGUNS
-			user << "<span class='danger'>The [src] is not ready to fire again.</span>"
-
-
-
-/obj/item/borg_tool/proc/tear_airlock(obj/machinery/door/airlock/A, mob/user)
-	removing_airlock = TRUE
-	user << "<span class='notice'>You start tearing apart the airlock...\
-		</span>"
-	playsound(src.loc, 'sound/borg/machines/borgforcedoor.ogg', 100, 4)
-	A.audible_message("<span class='italics'>You hear a loud metallic \
-		grinding sound.</span>")
-	if(do_after(user, delay=80, needhand=FALSE, target=A, progress=TRUE))
-		A.audible_message("<span class='danger'>[A] is ripped \
-			apart by [user]!</span>")
-			//add in a sound here
-		var/obj/structure/door_assembly/door = new A.doortype(get_turf(A))
-		door.density = 0
-		door.anchored = 1
-		door.name = "decimated [door]"
-		door.desc = "This airlock was ripped open by an immense force, \
-			I don't think it stopped them..."
-		qdel(A)
-	removing_airlock = FALSE
-
-
 
 //ai specific stuff!
 /datum/ai_laws/borg_override
@@ -360,180 +41,6 @@
 	emag = new /obj/item/weapon/cookiesynth(src)
 	fix_modules()
 
-//structures!
-/obj/structure/chair/borg
-	name = "borgified chair"
-	desc = "Assimilated chair</span>"
-	icon_state = "borg1"
-	anchored = 1
-
-/obj/structure/chair/borg/attackby(obj/I,mob/user,proximity, params)
-	. = ..()
-	if(proximity)
-		if(istype(I, /obj/item/weapon/wrench))
-			user << "<b>You begin to tear down [src] with your [I]</b>"
-			if(do_after(user, 100))
-				playsound(loc, 'sound/items/Ratchet.ogg', 50, 1)
-				qdel(src)
-				return
-
-	else
-		return
-
-/obj/structure/chair/borg/conversion
-	name = "assimilation bench"
-	desc = "Looking at this thing sends chills down your spine, good thing you're not being put on it..right?</span>"
-	icon_state = "borg_off"
-	anchored = 1
-	can_buckle = 1
-	can_be_unanchored = 0
-	max_buckled_mobs = 1
-	burn_state = FIRE_PROOF
-	buildstacktype = null
-	item_chair = null // if null it can't be picked up
-	creates_scraping_noise = FALSE
-	var/restrained = 0 //can they unbuckle easily?
-
-/obj/structure/chair/borg/conversion/proc/check_elegibility(mob/living/carbon/human/H)
-	if(isborg(H))
-		src.visible_message("<span class='warning'>Error: [H] Is already a drone.</span>")
-		return FALSE
-	for(var/obj/item/organ/I in H.internal_organs)
-		if(istype(I, /obj/item/organ/body_egg/borgNanites) && !isborg(H))
-			return TRUE
-	if(!istype(H))
-		return FALSE
-
-
-
-
-/obj/structure/chair/borg/conversion/user_buckle_mob(mob/living/M, mob/user)
-	. = ..()
-	if(check_elegibility(M) && loc == M.loc)
-		playsound(loc, 'sound/effects/strapin.ogg', 50, 1, -1)
-		M << "<span class='warning'>You feel an immense wave of dread wash over you as [user] starts to strap you into [src]</span>"
-		user << "<span class='warning'>We begin to prepare [M] for assimilation into the collective.</span>"
-		M << sound('sound/effects/heartbeat.ogg')
-		var/mob/living/carbon/human/H = M
-		if(do_after(user, 100, target = H))
-			for(var/obj/item/W in H)
-				if(!M.unEquip(W))
-					qdel(W)
-			restrained = 1
-			icon_state = "borg_off"
-			M.do_jitter_animation(50)
-			src.visible_message("<span class='warning'>[M] looks terrified as they lay on [src]</span>")
-			sleep(60)
-			M << "<span class='warning'>You feel several sharp stings as the [src] cuts into you!</span>"
-			sleep(10)
-			M << "<span class='warning'>OH GOD THE AGONY!</span>"
-			playsound(loc, 'sound/borg/machines/convert_table.ogg', 50, 1, -1)
-			src.visible_message("<span class='warning'>[M] screams in agony as the [src] forces grotesque metal parts onto their grey flesh!</span>")
-			playsound(loc, 'sound/effects/megascream.ogg', 50, 1, -1) //https://youtu.be/5QvgLlFyeok?t=1m48s
-			icon_state = "borg_on"
-			var/image/armoverlay = image('icons/obj/chairs.dmi')
-			armoverlay.icon_state = "borg_arms"
-			armoverlay.layer = ABOVE_MOB_LAYER
-			overlays += armoverlay
-			var/image/armoroverlay = image('icons/obj/chairs.dmi')
-			armoroverlay.icon_state = "borgarmour"
-			armoroverlay.layer = ABOVE_MOB_LAYER
-			overlays += armoroverlay
-			sleep(40)
-			playsound(loc, 'sound/borg/machines/convert_table2.ogg', 50, 1, -1)
-			sleep(20)
-			ticker.mode.equip_borg_from_bench(M)
-			overlays -= armoverlay
-			overlays -= armoroverlay
-			icon_state = "borg_off"
-			M << "<span class='warning'>We feel different as the straps binding us to the [src] release, our designation is [M.name].</span>"
-			restrained = 0
-	else //error meme
-		src.visible_message("<span class='warning'>[M] is not ready to be augmented.</span>")
-		restrained = 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/obj/structure/chair/borg/conversion/user_unbuckle_mob(mob/living/buckled_mob/M)
-	if(has_buckled_mobs())
-		for(var/m in buckled_mobs)
-			if(restrained)
-				return
-			else
-				unbuckle_mob(m)
-
-
-
-/obj/structure/chair/borg/charging
-	name = "recharging alcove"
-	desc = "It hums with familiar sounds, a friend to the Xel."
-	icon_state = "borgcharger"
-	anchored = 1
-	can_buckle = 1
-	can_be_unanchored = 0
-	max_buckled_mobs = 1
-	burn_state = FIRE_PROOF
-	buildstacktype = null
-	item_chair = null // if null it can't be picked up
-	creates_scraping_noise = FALSE
-	var/cooldown = 12
-	var/saved_time = 0
-	var/cooldown2 = 120 //music loop cooldowns
-	var/saved_time2 = 0
-	var/valid = 0
-	var/sound = 'sound/borg/machines/alcove.ogg'
-
-/obj/structure/chair/borg/charging/New()
-	. = ..()
-	START_PROCESSING(SSobj, src)
-
-/obj/structure/chair/borg/charging/process()
-	if(valid)
-		if(world.time >= saved_time + cooldown)
-			saved_time = world.time
-			if(has_buckled_mobs())
-				for(var/A in buckled_mobs)
-					if(ishuman(A))
-						var/mob/living/carbon/human/H = A
-						H.adjustBruteLoss(-2)
-						H.adjustFireLoss(-2)
-					if(world.time >= saved_time2 + cooldown2)
-						saved_time2 = world.time
-						A << sound(sound)
-
-
-		else
-			return
-
-/obj/structure/chair/borg/charging/user_buckle_mob(mob/living/M, mob/user)
-	. = ..()
-	if(ishuman(M) && M.loc == loc)
-		var/mob/living/carbon/human/H = M
-		if(isborg(H))
-			valid = 1
-			H << "<span class='warning'>We plug into [src] and feel a soothing current wash over us as our wounds are knitted up by our nanobots.</span>"
-		else
-			src.visible_message("<span class='warning'>[M] cannot be recharged as they are not Xel.</span>")
-			unbuckle_mob(M)
-			return
-
-	else
-		src.visible_message("<span class='warning'>[M] cannot be recharged.</span>")
-		unbuckle_mob(M)
-		return
-
-
 //Organs, this handles the drone infections, if theyre not made into full drones from half drones in time they lose the effects, or if the organ is removed.
 
 #define START_TIMER borg_convert_timer = world.time + rand(600,800) //they have 6-8 minutes roughly to convert the half drone before it turns back into a human
@@ -576,7 +83,7 @@
 	desc = "an inbuilt radio that the Xel use to communicate with one another, CTRL click it to access the headset interface, and use the action button up top to message the collective."
 	icon_state = "xelheadset"
 	item_state = "xelheadset"
-	flags = NODROP
+	flags = NODROP | EARBANGPROTECT
 	actions_types = list(/datum/action/item_action/xelchat)
 	unacidable = 1
 
@@ -603,17 +110,14 @@
 	if(!user)
 		return
 	var/message = stripped_input(user,"Communicate with the collective.","Send Message")
-	var/mob/living/carbon/human/B = user
-	if(!message || !isborg(B))
+//	var/mob/living/carbon/human/B = user
+	if(!message)
 		return
 	var/ping = "<font color='green' size='2'><B><i>Xel collective</i> [usr.real_name]: [message]</B></font></span>"
-	for(var/mob/living/carbon/human/I in world)
-		if(!isborg(I))
-			return
-		else if(I in ticker.mode.borgs && isborg(I))
+	for(var/mob/living/I in world)
+		if(I.mind in ticker.mode.borgs)
 			I << ping
 			continue
-
 	for(var/mob/M in dead_mob_list)
 		var/link = FOLLOW_LINK(M, user)
 		M << "[link] [ping]"
@@ -783,13 +287,16 @@
 	H.dna.species.specflags |= NOGUNS
 	H.dna.species.specflags |= NOBREATH
 	H.update_body()
+	if(!src in ticker.mode.borgs)
+		ticker.mode.borgs += H
+
 
 /datum/action/item_action/futile
 	name = "resistance is futile!"
 
 /obj/item/clothing/mask/gas/borg
 	name = "borg mask"
-	desc = "A built in respirator that covers the face of a borg, it is dark purple, alt click it to use its voice synthesizer."
+	desc = "A built in respirator that covers the face of a borg, it is dark purple."
 	icon_state = "borg"
 	item_state = null
 	origin_tech = null
@@ -803,7 +310,7 @@
 
 /obj/item/clothing/mask/gas/borg/ui_action_click(mob/user, actiontype)
 	if(actiontype == /datum/action/item_action/futile)
-		futile()
+		futile(user)
 
 /obj/item/clothing/mask/gas/borg/cyborg
 	flags = null

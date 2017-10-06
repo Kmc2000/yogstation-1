@@ -436,6 +436,8 @@
 #include "code\game\gamemodes\wizard\wizard.dm"
 #include "code\game\gamemodes\Xel\borg.dm"
 #include "code\game\gamemodes\Xel\borg_items.dm"
+#include "code\game\gamemodes\Xel\borg_structures.dm"
+#include "code\game\gamemodes\Xel\borg_tool.dm"
 #include "code\game\gamemodes\zombie\zombie.dm"
 #include "code\game\golf\golf.dm"
 #include "code\game\machinery\ai_slipper.dm"
