@@ -100,7 +100,7 @@
 	config_tag = "borg"
 	antag_flag = ROLE_BORG
 	required_players = 1 //change me
-	required_enemies = 2//3
+	required_enemies = 3//3
 	recommended_enemies = 5
 	restricted_jobs = list("Cyborg", "AI")
 	var/borgs_to_make = 1

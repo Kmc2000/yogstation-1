@@ -319,7 +319,7 @@
 
 /obj/item/weapon/circuitboard/machine/borg/navicomp
 	name = "assimilated circuit-board (navigational computer)"
-	build_path = /obj/machinery/borg/ftl
+	build_path = /obj/machinery/borg/helm
 	origin_tech = "programming=10;engineering=8"
 	req_components = list(
 							/obj/item/weapon/stock_parts/borg/bin = 2,

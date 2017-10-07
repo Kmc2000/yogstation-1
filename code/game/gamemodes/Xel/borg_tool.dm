@@ -19,72 +19,25 @@
 	var/inprogress = 0
 	var/build_mode = 1
 	var/norun = 0 //stops infinite chair spam
+	var/obj/item/borg_checker/checker
+	var/dismantling_machine = 0
+
+/obj/item/borg_tool/examine(mob/user)
+	. = ..()
+	user << "Click it in hand to its cycle modes"
+	user << "It has three modes; DESTROY, assimilate and ranged, if you alt click it whilst in assimilate mode it will change whether you're going to assimilate the turf below you, or build a structure"
+	user << "<b>DESTROY</b> mode does a lot of damage, <b>RANGED</b> will fire a disabler shot and <b>ASSIMILATE</b> lets you convert turfs, people, AIs and cyborgs into xel drones"
+	user << "If you CTRL click a tool in ASSIMILATE mode, it changes what structure you're going to build, note that to build one the turf MUST be clear with no other structure on it"
+	user << "To that effect, if your tool bugs out, click it in hand back to assimilate mode, this will clear it (it's a beta :^) )"
+	user << "You can tear down doors with [src]! set it to <b>DESTROY</b> mode and hit a door on HARM intent!"
+	user << "You need to convert areas into Xel turfs to win, to that effect CTRL or ALT click your tool on any mode apart from assimilate to check an area's validity (note that it takes a few seconds! you will be vulnerable)"
 
 
 /obj/item/borg_tool/New()
 	. = ..()
 	gun = new /obj/item/weapon/gun/energy/disabler/borg(src)
 	building = /obj/structure/chair/borg/conversion
-
-/obj/item/borg_checker
-	name = "area checker"
-	desc = "reee."
-	item_state = "borgtool"
-	origin_tech = null
-	icon_state = "borgtool"
-	var/locname
-	var/announced = 0
-	var/turfs_in_a = 0
-	var/borg_turfs_in_target = 0 //used to calculate if the area is fully borg'd
-
-/obj/item/borg_checker/New()
-	. = ..()
-	START_PROCESSING(SSobj, src)
-
-/obj/item/borg_checker/CtrlClick(mob/user)
-	borg_turfs_in_target = 0
-	turfs_in_a = 0
-	user << "we're checking eligibiliy!"
-	var/area/A = get_area(src)
-	locname = initial(A.name)
-	if(istype(A, ticker.mode.borg_target_area))
-		src.visible_message("A is the target area")
-		for(var/turf/T in get_area_turfs(A))
-			if(istype(T, /turf))
-				user << "turfs in a: [turfs_in_a]" //turfs remaining
-				turfs_in_a ++
-			if(istype(T, /turf/open/floor/borg))
-				borg_turfs_in_target ++
-				turfs_in_a --
-			if(istype(T, /turf/closed/wall/borg))
-				borg_turfs_in_target ++
-				turfs_in_a --
-		user << "There are [turfs_in_a] remaining, un-assimilated turfs in [locname], and [borg_turfs_in_target] of those turfs are borg turfs."
-	else
-		user << "it's not the right area, the right area is [ticker.mode.borg_target_area], we are currently in [A]"
-
-/obj/item/borg_checker/AltClick(mob/user)
-	if(!announced)
-		user << "stage 1"
-		user << "borg turfs : [borg_turfs_in_target], other turfs: [turfs_in_a]"
-		if(borg_turfs_in_target > turfs_in_a) //60% or more of the turfs are assimilated
-			user << "stage 2"
-			announced = 1
-			var/message = "[locname] has been assimilated. Build ship components to complete area takeover."
-			var/ping = "<font color='green' size='2'><B><i>Xel collective</i> HIVEMIND SUBSYSTEM: [message]</B></font></span>"
-		//	user << "[ping]"
-			ticker.mode.borg_completion_assimilation = 1
-			for(var/mob/living/I in world)
-				if(I.mind in ticker.mode.borgs)
-					I << ping
-					return
-	if(borg_turfs_in_target < turfs_in_a && announced)
-		var/message = "<font color='green' size='2'><B><i>Xel collective</i> HIVEMIND SUBSYSTEM: [locname] is no longer suitable, re-claim it by assimilating turfs.</B></font></span>"
-		announced = 0
-		for(var/mob/living/I in ticker.mode.borgs)
-			I << message
-			return
-
+	checker = new /obj/item/borg_checker(src)
 
 /obj/item/weapon/gun/energy/disabler/borg //NOGUNS BREAKS THIS FIX PLS
 	name = "integrated Xel gun"
@@ -112,48 +65,47 @@
 /obj/item/borg_tool/CtrlClick(mob/user)
 	if(!norun)
 		user << sound('sound/borg/machines/mode.ogg')
-		if(mode == 2 && build_mode == 1) //add a for later when we add tech level ups and shit
+		if(mode == 1 && build_mode == 1) //add a for later when we add tech level ups and shit
 			user << "<span class='warning'>[src] will now create charging alcoves</span>" //expand on me!
 			building = /obj/structure/chair/borg/charging //for now it just makes it build a borg chair, nothing special
 			build_mode = 2
-		else if(mode == 2 && build_mode == 2)
+		else if(mode == 1 && build_mode == 2)
 			user << "<span class='warning'>[src] will now create Conversion suites</span>" //expand on me!
 			building = /obj/structure/chair/borg/conversion //for now it just makes it build a borg chair, nothing special
 			build_mode = 1
+		else if(mode != 1)
+			checker.check_area(user)
 	else
 		user << "<span class='warning'>[src] is still building something!</span>"
 
 /obj/item/borg_tool/AltClick(mob/user)
 	if(!norun)
 		user << sound('sound/borg/machines/mode.ogg')
-		if(mode == 2 && !buildmode) //add a for later when we add tech level ups and shit
+		if(mode == 1 && !buildmode) //add a for later when we add tech level ups and shit
 			user << "<span class='warning'>[src] will now create structures.</span>" //expand on me!
 			buildmode = 1
-		else if(mode == 2 && buildmode)
+		else if(mode == 1 && buildmode)
 			user << "<span class='warning'>[src] will now assimilate floors instead of building on them.</span>"
 			buildmode = 0
-	//modes: 1 = assimilate, 2 = build, 3 = attack
+		else if(mode != 1)
+			checker.check_area(user)
+	//modes: 1 = assimilate, 2 = ranged, 3 = attack
 /obj/item/borg_tool/attack_self(mob/user, params)
 	user << sound('sound/borg/machines/mode.ogg')
 	norun = 0
 	switch(mode)
 		if(1)
 			mode = 2
-			user << "<span class='warning'>[src] is now set to BUILD mode.</span>"
-			force = 5
-		if(2)
-			mode = 3
 			user << "<span class='warning'>[src] is now set to DESTROY mode.</span>"
 			force = 18
-		if(3)
-			mode = 4
+		if(2)
+			mode = 3
 			user << "<span class='warning'>[src] is now set to RANGED mode.</span>"
-			force = 2
-		if(4)
+			force = 5
+		if(3)
 			mode = 1
 			user << "<span class='warning'>[src] is now set to ASSIMILATE mode.</span>"
 			force = 0
-
 /obj/item/borg_tool/proc/sanitycheck(mob/living/carbon/human/H, mob/user) //ok who tf this boi tryina convert smh
 	for(var/obj/item/organ/O in H.internal_organs)
 		if(istype(O, /obj/item/organ/body_egg/borgNanites))
@@ -165,7 +117,6 @@
 //asimilate mode now converts walls and shit, build mode exclusively for..building yeet.
 
 /obj/item/borg_tool/afterattack(atom/I, mob/user, proximity)
-	. = ..()
 	if(proximity && !norun)
 		if(mode == 1) //assimilate
 			if(ishuman(I) && isliving(I))
@@ -262,8 +213,7 @@
 						sleep(60) //so we dont get overlapping sounds
 						for(var/mob/living/silicon/B in world)
 							B << sound('sound/borg/overmind/silicon_resist.ogg') //intimidating message telling them to not resist
-		if(mode == 2 && !norun)//build mode
-			if(istype(I, /turf/open))
+			else if(istype(I, /turf/open))
 				var/turf/open/A = I
 				norun = 0
 				var/canrun = 0
@@ -279,33 +229,86 @@
 					else				//all tiles turn invalid if you click another tile before youre done with the first
 						norun = 0
 						canrun = 1
-					if(canrun)
-						norun = 1 //stop spamming
-						user << "<span class='danger'>We are building a structure ontop of [I].</span>"
-						if(do_after(user, convert_time, target = A))
-							new building(get_turf(A))
-							norun = 0
+						if(canrun)
+							norun = 1 //stop spamming
+							user << "<span class='danger'>We are building a structure ontop of [I].</span>"
+							if(do_after(user, convert_time, target = A))
+								new building(get_turf(A))
+								norun = 0
 				else
 					user << "<span class='danger'>We are assimilating [I].</span>"
 					if(do_after(user, convert_time, target = A))
 						A.ChangeTurf(/turf/open/floor/borg)
-
 			else if(istype(I, /turf/closed/wall))
-				if(!istype(I, /turf/closed/wall/borg || /turf/closed/indestructible))
+				if(!istype(I, /turf/closed/wall/borg) || !istype(I, /turf/closed/indestructible))
 					playsound(src.loc, 'sound/borg/machines/convertx.ogg', 40, 4)
 					user << "<span class='danger'>We are assimilating [I].</span>"
 					var/turf/closed/wall/A = I
 					if(do_after(user, convert_time, target = A))
 						A.ChangeTurf(/turf/closed/wall/borg)
+			else if(istype(I, /obj/machinery/computer))
+				if(!istype(I, /obj/machinery/computer/communications) || !istype(I, /obj/machinery/computer/card) || !istype(I, /obj/machinery/computer/shuttle/syndicate/drop_pod/borg))
+					if(!dismantling_machine)
+						dismantling_machine = 1
+						var/obj/machinery/computer/C = I
+						playsound(src.loc, 'sound/borg/machines/convertmachine.ogg', 40, 4)
+						if(do_after(user, convert_time, target = C))
+							var/obj/item/stack/sheet/metal/M = new (loc, 5)
+							M.add_fingerprint(user)
+							var/board = input("Circuit selection.", "Assimilate circuitboard") in list("FTL", "NAVICOMP", "THRONE")
+							switch(board)
+								if("FTL")
+									new /obj/item/weapon/circuitboard/machine/borg/FTL(C.loc)
+									qdel(C)
+								if("NAVICOMP")
+									new /obj/item/weapon/circuitboard/machine/borg/navicomp(C.loc)
+									qdel(C)
+								if("THRONE")
+									new /obj/item/weapon/circuitboard/machine/borg/throne(C.loc)
+									qdel(C)
+						dismantling_machine = 0
+			else if(istype(I, /obj/machinery/gravity_generator)) //if(istype(thing) && other)
+				if(!dismantling_machine)
+					dismantling_machine = 1
+					playsound(src.loc, 'sound/borg/machines/convertmachine.ogg', 40, 4)
+					var/obj/machinery/gravity_generator/G = I
+					if(do_after(user, convert_time, target = G))
+						G.set_broken()
+						new /obj/item/weapon/stock_parts/borg(G.loc)
+						new /obj/item/weapon/stock_parts/borg(G.loc)
+						new /obj/item/weapon/stock_parts/borg/capacitor(G.loc)
+						new /obj/item/weapon/stock_parts/borg/capacitor(G.loc)
+						new /obj/item/weapon/stock_parts/borg/dilithium(G.loc)
+						new /obj/item/weapon/stock_parts/borg/bin(G.loc)
+						new /obj/item/weapon/stock_parts/borg/bin(G.loc)
+					dismantling_machine = 0
+			else if(istype(I, /obj/machinery/the_singularitygen))
+				if(!dismantling_machine)
+					dismantling_machine = 1
+					playsound(src.loc, 'sound/borg/machines/convertmachine.ogg', 40, 4)
+					var/obj/machinery/the_singularitygen/G = I
+					if(do_after(user, convert_time, target = G))
+						new /obj/item/weapon/stock_parts/borg(G.loc)
+						new /obj/item/weapon/stock_parts/borg(G.loc)
+						new /obj/item/weapon/stock_parts/borg(G.loc)
+						new /obj/item/weapon/stock_parts/borg(G.loc)
+						new /obj/item/weapon/stock_parts/borg/bin(G.loc)
+						new /obj/item/weapon/stock_parts/borg/bin(G.loc)
+						new /obj/item/weapon/stock_parts/borg/bin(G.loc)
+						new /obj/item/weapon/stock_parts/borg/bin(G.loc)
+						new /obj/item/weapon/stock_parts/borg/bin(G.loc)
+						new /obj/item/weapon/stock_parts/borg/capacitor(G.loc)
+						new /obj/item/weapon/stock_parts/borg/capacitor(G.loc)
+						qdel(G)
+					dismantling_machine = 0
 
-		if(mode == 3) //attack mode
+		if(mode == 2) //attack mode
 			if(istype(I, /obj/machinery/door/airlock) && !removing_airlock)
 				tear_airlock(I, user)
-
 		else
-			user << "<span class='danger'>[src] bleeps softly: ERROR.</span>"
+		//	user << "<span class='danger'>[src] bleeps softly: ERROR.</span>"
 
-	if(mode == 4) //override proximity check
+	if(mode == 3) //ranged mode
 		var/mob/living/carbon/human/A = user
 		A.dna.species.specflags -= NOGUNS //sue me
 		if(world.time >= saved_time + cooldown)
@@ -315,6 +318,8 @@
 		else
 			A.dna.species.specflags |= NOGUNS
 			user << "<span class='danger'>The [src] is not ready to fire again.</span>"
+	else
+		. = ..()
 
 
 
@@ -339,3 +344,61 @@
 	removing_airlock = FALSE
 
 
+/obj/item/borg_checker
+	name = "area checker"
+	desc = "reee."
+	item_state = "borgtool"
+	origin_tech = null
+	icon_state = "borgtool"
+	var/locname
+	var/announced = 0
+	var/turfs_in_a = 0
+	var/borg_turfs_in_target = 0 //used to calculate if the area is fully borg'd
+
+/obj/item/borg_checker/New()
+	. = ..()
+	START_PROCESSING(SSobj, src)
+
+/obj/item/borg_checker/proc/check_area(mob/user)
+	borg_turfs_in_target = 0
+	turfs_in_a = 0
+	user << "we're checking eligibiliy!"
+	var/area/A = get_area(src)
+	locname = initial(A.name)
+	if(istype(A, ticker.mode.borg_target_area))
+		src.visible_message("A is the target area")
+		for(var/turf/T in get_area_turfs(A))
+			if(istype(T, /turf))
+				user << "turfs in a: [turfs_in_a]" //turfs remaining
+				turfs_in_a ++
+			if(istype(T, /turf/open/floor/borg))
+				borg_turfs_in_target ++
+				turfs_in_a --
+			if(istype(T, /turf/closed/wall/borg))
+				borg_turfs_in_target ++
+				turfs_in_a --
+		user << "There are [turfs_in_a] remaining, un-assimilated turfs in [locname], and [borg_turfs_in_target] of those turfs are borg turfs."
+		if(!announced)
+			if(borg_turfs_in_target > turfs_in_a) //60% or more of the turfs are assimilated
+				announced = 1
+				var/message = "[locname] has been assimilated. Build ship components to complete area takeover."
+				var/ping = "<font color='green' size='2'><B><i>Xel collective</i> HIVEMIND SUBSYSTEM: [message]</B></font></span>"
+			//	user << "[ping]"
+				ticker.mode.borg_completion_assimilation = 1
+				for(var/mob/living/I in world)
+					if(I.mind in ticker.mode.borgs)
+						I << ping
+						return
+	else
+		user << "it's not the right area, the right area is [ticker.mode.borg_target_area], we are currently in [A]"
+
+/obj/item/borg_checker/process() //this is just for checking the generated numbers from before, as it lags a bit.
+	if(borg_turfs_in_target < turfs_in_a)
+		ticker.mode.borg_completion_assimilation = 0
+		if(announced) //announced as in the area has BECOME unsuitable FROM being announced. Else it's just not suitable (ie on the first time someone checks the room)
+			var/message = "<font color='green' size='2'><B><i>Xel collective</i> HIVEMIND SUBSYSTEM: [locname] is no longer suitable, re-claim it by assimilating turfs.</B></font></span>"
+			announced = 0
+			for(var/mob/living/I in ticker.mode.borgs)
+				I << message
+				return
+			ticker.mode.borg_completion_assimilation = 0
