@@ -49,7 +49,7 @@
 /obj/item/organ/body_egg/borgNanites
 	name = "nanite cluster"
 	desc = "A metal lattice..every part of it moves and swims at its own will."
-	zone = "head"
+	zone = "chest"
 	slot = "borg_infection"
 	var/borg_convert_timer
 
@@ -73,10 +73,164 @@
 //Redundant kinda, exists as a check
 
 /obj/item/organ/body_egg/borgNanites/Remove(mob/living/carbon/M, special = 0)
+//	var/mob/living/carbon/human/H = owner	//no type check, as that should be handled by the surgery
+//	var/datum/mind/fuckfuckmeme = H.mind
+//	fuckfuckmeme.remove_xel()
 	. = ..() //youre not a borg now yay, the only way you could pull this off would be to behead one, due to the nodrop helmet etc. props if someone manages this though
+
 
 #undef START_TIMER
 
+//Ok here goes, DECONVERSION! you use the saw for this!
+
+/obj/item/weapon/surgicaldrill/attack(mob/living/M, mob/user)
+	var/mob/living/carbon/N = M
+	if(isborg(N))
+		for(var/obj/item/clothing/suit/space/borg/B in N.contents)
+			var/obj/item/clothing/suit/space/borg/A = B
+			if(do_after(user, 100, target = M))
+				if(A.current_charges == 0) //no drill thru shield
+					src.visible_message("[user] drills into [M]'s exoskeleton! shattering it to pieces.")
+					qdel(B)
+					for(var/obj/item/clothing/under/borg/Z in N.contents)
+						qdel(Z)
+				else
+					..() //carry on attack
+	else //carry on as normal
+		..()
+
+//SURGERY STEPS
+/datum/surgery/borg_deconvert
+	name = "hostile nanite removal"
+	steps = list(/datum/surgery_step/borg_incise,/datum/surgery_step/borg_sever,/datum/surgery_step/clamp_bleeders, /datum/surgery_step/borg_retract, /datum/surgery_step/borg_drill,/datum/surgery_step/borg_bleeders,/datum/surgery_step/clamp_bleeders,/datum/surgery_step/borg_subdermal, /datum/surgery_step/borg_subdermal_grab,/datum/surgery_step/borg_cautery )
+	species = list(/mob/living/carbon/human)
+	possible_locs = list("chest")
+
+/datum/surgery_step/borg_sever
+	name = "sever dermal implants"
+	implements = list(/obj/item/weapon/scalpel = 100, /obj/item/weapon/wirecutters = 55)
+	time = 50
+
+/datum/surgery_step/borg_incise
+	name = "sever surface implants"
+	implements = list(/obj/item/weapon/scalpel = 100, /obj/item/weapon/wirecutters = 55)
+	time = 60
+
+/datum/surgery_step/borg_incise/preop(mob/user, mob/living/carbon/target, target_zone, obj/item/tool, datum/surgery/surgery)
+	user.visible_message("[user] begins to sever [target]'s surface level implants.", "<span class ='notice'>You begin to sever [target]'s surface level implants...</span>")
+	var/mob/living/carbon/H = target //oops not user XD
+	var/image/ewoverlay = image('icons/obj/surgery.dmi')
+//	ewoverlay.ntransform.TurnTo(90)
+	ewoverlay.icon_state = "incision"
+	ewoverlay.layer = ABOVE_MOB_LAYER
+	H.overlays += ewoverlay
+	H.dir = 2
+
+
+/datum/surgery_step/borg_cautery
+	name = "seal wound"
+	implements = list(/obj/item/weapon/cautery = 100, /obj/item/weapon/wirecutters = 33)
+	time = 150
+
+/datum/surgery_step/borg_cautery/preop(mob/user, mob/living/carbon/target, target_zone, obj/item/tool, datum/surgery/surgery)
+	user.visible_message("[user] begins to repair [target]'s wounds.", "<span class ='notice'>You begin to repair [target]'s wounds...</span>")
+	var/mob/living/carbon/H = target //oops not user XD
+//	ewoverlay.ntransform.TurnTo(90)
+	H.overlays -= image("icon"='icons/obj/surgery.dmi', "icon_state"="incision")
+	H.overlays -= image("icon"='icons/obj/surgery.dmi', "icon_state"="retract")
+	H.overlays -= image("icon"='icons/obj/surgery.dmi', "icon_state"="saw2")
+	H.overlays -= image("icon"='icons/obj/surgery.dmi', "icon_state"="sawbeating")
+	H.overlays -= image("icon"='icons/obj/surgery.dmi', "icon_state"="hemo")
+	H.overlays -= image("icon"='icons/obj/surgery.dmi', "icon_state"="hemobeating")
+	H.update_icons()
+	H.dir = 2
+
+/datum/surgery_step/borg_retract
+	name = "open chest cavity"
+	implements = list(/obj/item/weapon/retractor = 100, /obj/item/weapon/wirecutters = 33)
+	time = 50
+
+/datum/surgery_step/borg_retract/preop(mob/user, mob/living/carbon/target, target_zone, obj/item/tool, datum/surgery/surgery)
+	var/mob/living/carbon/H = target //oops not user XD
+	user.visible_message("[user] begins to dilate the incision in [target]'s chest.", "<span class ='notice'>You begin to dilate [target]'s incision...</span>")
+	var/image/ewoverlay = image('icons/obj/surgery.dmi')
+	ewoverlay.icon_state = "retract"
+	ewoverlay.layer = ABOVE_MOB_LAYER
+	H.overlays += ewoverlay
+	H.dir = 2
+
+/datum/surgery_step/borg_subdermal
+	name = "sever subdermal implants"
+	implements = list(/obj/item/weapon/scalpel = 100, /obj/item/weapon/wirecutters = 55)
+	time = 50
+
+
+/datum/surgery_step/borg_drill
+	name = "drill through ribcage"
+	implements = list(/obj/item/weapon/surgicaldrill = 100, /obj/item/weapon/wrench = 20)
+	time = 100
+
+/datum/surgery_step/borg_drill/preop(mob/user, mob/living/carbon/target, target_zone, obj/item/tool, datum/surgery/surgery)
+	var/mob/living/carbon/H = target //oops not user XD
+	user.visible_message("[user] begins to smash throne the bone in [target]'s chest.", "<span class ='notice'>You begin to smash through the bone in [target]'s chest...</span>")
+	var/image/ewoverlay = image('icons/obj/surgery.dmi')
+	ewoverlay.icon_state = "saw2"
+	ewoverlay.layer = ABOVE_MOB_LAYER
+	H.overlays += ewoverlay
+	H.overlays -= ewoverlay
+	..()
+	sleep(50)
+	var/image/ewoverlay2 = image('icons/obj/surgery.dmi')
+	ewoverlay2.icon_state = "sawbeating"
+	ewoverlay2.layer = ABOVE_MOB_LAYER
+	H.overlays += ewoverlay2
+	H.dir = 2
+
+/datum/surgery_step/borg_bleeders
+	name = "install bleeders in cavity"
+	implements = list(/obj/item/weapon/hemostat = 100, /obj/item/weapon/wirecutters = 20)
+	time = 100
+
+/datum/surgery_step/borg_bleeders/preop(mob/user, mob/living/carbon/target, target_zone, obj/item/tool, datum/surgery/surgery)
+	var/mob/living/carbon/H = target //oops not user XD
+	user.visible_message("[user] begins to fit bleeders inside of [target]'s chest, whilst keeping the cavity open.", "<span class ='notice'>You begin to smash through the bone in [target]'s chest...</span>")
+	var/image/ewoverlay = image('icons/obj/surgery.dmi')
+	ewoverlay.icon_state = "hemobeating"
+	ewoverlay.layer = ABOVE_MOB_LAYER
+	H.overlays += ewoverlay
+	H.dir = 2
+
+/datum/surgery_step/borg_subdermal_grab
+	name = "remove subdermal implants"
+	implements = list(/obj/item/weapon/retractor = 100, /obj/item/weapon/wirecutters = 55)
+	time = 50
+	var/obj/item/organ/IC = null
+
+/datum/surgery_step/borg_subdermal_grab/preop(mob/user, mob/living/carbon/target, target_zone, obj/item/tool, datum/surgery/surgery)
+	for(var/obj/item/organ/body_egg/borgNanites/I in target.internal_organs)
+		IC = I
+		break
+	user.visible_message("[user] starts to remove the nanite mesh in [target].", "<span class='notice'>You start to remove [target]'s nanite mesh...</span>")
+
+/datum/surgery_step/borg_subdermal_grab/success(mob/user, mob/living/carbon/target, target_zone, obj/item/tool, datum/surgery/surgery)
+	if(IC)
+		user.visible_message("[user] pulls [IC] out of [target]'s [target_zone]!", "<span class='notice'>You pull [IC] out of [target]'s [target_zone].</span>")
+		user.put_in_hands(IC)
+		IC.Remove(target, special = 1, 0)
+		target.visible_message("[target] looks around in confusion, as if they've had a bad dream...")
+		target.regenerate_icons()
+		return 1
+	else
+		user << "<span class='warning'>You don't find anything in [target]'s chest!</span>"
+		return 0
+
+
+
+/obj/item/weapon/storage/part_replacer/borg
+	name = "assimilated part replacer"
+	desc = "A modified part exchanger it can sort, store, and apply standard machine parts."
+	icon_state = "borgrped"
+	item_state = "RPED"
 
 /obj/item/device/radio/headset/borg/alt
 	name = "cortical radio implant"
@@ -132,6 +286,7 @@
 	has_sensor = 0
 	unacidable = 1
 	flags = NODROP
+	burn_state = FIRE_PROOF
 
 /obj/item/clothing/suit/space/borg
 	name = "borg exoskeleton"
@@ -156,7 +311,18 @@
 	var/shield_state = "borgshield"
 	var/shield_on = "borgshield"
 	allowed = list(/obj/item/device/flashlight,/obj/item/weapon/tank/internals)
+	burn_state = FIRE_PROOF
 
+/obj/item/clothing/suit/space/borg/regal
+	name = "the queen's exosuit"
+	desc = "A suit that interfaces with the xel queen, it is its own robot but it can't function without a queen..."
+	icon_state = "borgqueen"
+	item_state = "borgqueen"
+	flags_inv = HIDEGLOVES | HIDESHOES | HIDEJUMPSUIT | HIDEMASK | HIDEEARS | HIDEEYES | HIDEHAIR | HIDEFACIALHAIR
+
+/obj/item/clothing/suit/space/borg/regal/New()
+	. = ..()
+	icon_state = "borgqueen"
 
 /obj/item/clothing/suit/space/borg/New()
 	. = ..()
@@ -170,7 +336,8 @@
 		s.set_up(2, 1, src)
 		s.start()
 		owner.visible_message("<span class='danger'>[owner]'s shields deflect [attack_text] in a shower of sparks!</span>")
-		playsound(loc, 'sound/borg/machines/shieldadapt.ogg', 50, 1)
+		var/sound = pick('sound/borg/machines/shieldadapt.ogg','sound/borg/machines/borg_adapt.ogg','sound/borg/machines/borg_adapt2.ogg','sound/borg/machines/borg_adapt3.ogg','sound/borg/machines/borg_adapt4.ogg')
+		playsound(loc, sound, 50, 1)
 		current_charges--
 		recharge_cooldown = world.time + recharge_delay
 		START_PROCESSING(SSobj, src)
@@ -251,15 +418,17 @@
 	flash_protect = -1
 	unacidable = 1
 	flags = ABSTRACT | NODROP
-
 /obj/item/clothing/glasses/night/borg/New()
 	. = ..()
 	icon_state = pick("borg","borg2","borg3","borg4") // coloured eyes
 
+/obj/item/clothing/head/borg/queen
+	name = "queen's helmet"
+	item_state = null
+	icon_state = null
+
 /datum/outfit/borg
 	name = "borg drone"
-	//id = /obj/item/weapon/card/id/gold
-//	belt = /obj/item/device/pda/captain
 	glasses = /obj/item/clothing/glasses/night/borg
 	ears = /obj/item/device/radio/headset/borg/alt
 	uniform =  /obj/item/clothing/under/borg
@@ -287,7 +456,8 @@
 	H.dna.species.specflags |= NOGUNS
 	H.dna.species.specflags |= NOBREATH
 	H.update_body()
-	if(!src in ticker.mode.borgs)
+	var/datum/mind/fuckfuckmeme = H.mind
+	if(!fuckfuckmeme in ticker.mode.borgs)
 		ticker.mode.borgs += H
 
 
@@ -378,3 +548,214 @@
 	desc = "A deck plate with odd parts, pipes and green LEDs bolted to it."
 	icon_state = "xelfloor"
 	smooth = SMOOTH_FALSE //change this when I make a smooth proper version
+
+
+/turf/open/floor/borg/trek
+	name = "carpet"
+	desc = "A carpeted floor that matches the surroundings."
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "trek"
+	smooth = SMOOTH_FALSE //change this when I make a smooth proper version
+
+
+/turf/open/floor/borg/trek/light
+	name = "carpet"
+	desc = "A carpeted floor that matches the surroundings."
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "trek3"
+	smooth = SMOOTH_FALSE //change this when I make a smooth proper version
+
+/turf/open/floor/borg/trek/blue
+	name = "blue carpet"
+	desc = "A carpeted floor that matches the surroundings."
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "trek4"
+	smooth = SMOOTH_FALSE //change this when I make a smooth proper version
+
+/turf/open/floor/borg/trek/red
+	name = "red carpet"
+	desc = "A carpeted floor that matches the surroundings."
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "trek2"
+	smooth = SMOOTH_FALSE //change this when I make a smooth proper version
+
+
+/turf/open/floor/borg/trek/dark
+	name = "carpet"
+	desc = "A carpeted floor that matches the surroundings."
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "trekfloor"
+	smooth = SMOOTH_FALSE //change this when I make a smooth proper version
+
+
+/obj/machinery/door/airlock/trek
+	name = "airlock"
+	icon = 'icons/obj/doors/trek.dmi'
+	icon_state = "closed"
+	doorOpen = 'sound/borg/machines/tngdooropen.ogg'
+	doorClose = 'sound/borg/machines/tngdoorclose.ogg'
+	doorDeni = 'sound/borg/machines/tngchime.ogg' // i'm thinkin' Deni's
+	overlays_file = 'icons/obj/doors/trek.dmi'
+
+
+/obj/structure/fluff/warpcore
+	name = "warp core"
+	desc = "It hums lowly, it runs on dilithium"
+	icon = 'icons/obj/machines/borg.dmi'
+	icon_state = "warp"
+	anchored = TRUE
+	density = 1
+	opacity = 0
+	layer = 4.5
+
+/obj/structure/fluff/helm
+	name = "helm control"
+	desc = "A console that sits over a chair, allowing one to fly a starship."
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "helm"
+	anchored = TRUE
+	density = 1
+	opacity = 0
+	layer = 4.5
+
+/obj/structure/fluff/helm/desk
+	name = "tactical"
+	desc = "A computer built into a desk, showing ship manifests, weapons, tactical systems, anything you could want really, the manifest shows a long list but the 4961 irradiated haggis listing catches your eye..."
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "desk"
+	anchored = TRUE
+	density = 1 //SKREE
+	opacity = 0
+	layer = 4.5
+
+
+/obj/structure/fluff/helm/desk/noisy //makes star trek noises!
+	name = "captain's display"
+	desc = "An LCARS display showing all shipboard systems, status: NOMINAL"
+	var/cooldown2 = 163 //16 second cooldown
+	var/saved_time = 0
+
+/obj/structure/fluff/helm/desk/noisy/New()
+	. = ..()
+	START_PROCESSING(SSobj, src)
+
+/obj/structure/fluff/helm/desk/noisy/process()
+	if(world.time >= saved_time + cooldown2)
+		saved_time = world.time
+		playsound(src.loc, "sound/borg/machines/tng_bridge_2.ogg", 100, 0, 4)
+
+/obj/structure/sign/viewscreen
+	icon = 'icons/obj/machines/borg.dmi'
+	anchored = 1
+	opacity = 0
+	density = 0
+	layer = SIGN_LAYER
+	name = "viewscreen"
+
+
+/obj/structure/sign/viewscreen/lcars
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	layer = SIGN_LAYER
+	icon_state = "lcars"
+
+/obj/structure/sign/viewscreen/lcars_tactical
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	layer = SIGN_LAYER
+	icon_state = "lcars2"
+
+/obj/structure/sign/viewscreen/lcars_redalert
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	layer = SIGN_LAYER
+	icon_state = "redalertlcars"
+
+
+
+
+//Coding standards? what the hell are those//
+
+
+/obj/item/clothing/under/trek/captrek
+	name = "captain's suit"
+	desc = "A stylish jumpsuit worn by the captain, waaaaait a minute you've seen this before somewhere."
+	icon_state = "capttrek"
+	item_color = "capttrek"
+	can_adjust = 1
+
+/obj/item/clothing/under/trek/hostrek
+	name = "security officer's jumpsuit"
+	desc = "A stylish jumpsuit worn by the security team, waaaaait a minute you've seen this before somewhere."
+	icon_state = "hostrek"
+	item_color = "hostrek"
+	can_adjust = 1
+
+/obj/item/clothing/under/trek/medtrek
+	name = "medical officer's jumpsuit"
+	desc = "A stylish jumpsuit worn by the medical and science staff, waaaaait a minute you've seen this before somewhere."
+	icon_state = "scitrek"
+	item_color = "scitrek"
+	can_adjust = 1
+
+/obj/item/clothing/under/trek/greytrek
+	name = "cadet jumpsuit"
+	desc = "A stylish jumpsuit given to those officers still in training, otherwise known as assistants, waaaaait a minute you've seen this before somewhere."
+	icon_state = "greytrek"
+	item_color = "greytrek"
+	can_adjust = 1
+
+/obj/item/clothing/under/trek/comttrek
+	name = "command officer's jumpsuit"
+	desc = "A stylish jumpsuit worn by the heads of staff, waaaaait a minute you've seen this before somewhere."
+	icon_state = "comttrek"
+	item_color = "comttrek"
+	can_adjust = 1
+
+
+/obj/machinery/computer/shuttle/white_ship/trek
+	name = "Helm Control"
+	desc = "make it so."
+	circuit = /obj/item/weapon/circuitboard/computer/white_ship
+	shuttleId = "trekship"
+	possible_destinations = "trekship_station;trekshipaway"
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "helm"
+	anchored = TRUE
+	density = 1
+	opacity = 0
+	layer = 4.5
+	icon_keyboard = null
+	icon_screen = null
+
+/obj/docking_port/mobile/trek //aaaa
+	name = "uss something"
+	id = "trekship"
+	dwidth = 3
+	width = 30
+	height = 27
+
+/obj/machinery/computer/camera_advanced/shuttle_docker/trek
+	name = "advanced helm control"
+	desc = "Used to designate a precise transit location for the syndicate shuttle."
+	dir = 8 //by default
+	z_lock = ZLEVEL_STATION
+	shuttlePortId = "trek_custom"
+	shuttlePortName = "warp beacon"
+	jumpto_ports = list("syndicate_away", "syndicate_z5", "syndicate_ne", "syndicate_nw", "syndicate_n", "syndicate_se", "syndicate_sw", "syndicate_s")
+	view_range = 30
+	x_offset = -4
+	y_offset = -2
+	shuttleId = "trekship"
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "helm"
+	anchored = TRUE
+	density = 1
+	opacity = 0
+	layer = 4.5
+	icon_keyboard = null
+	icon_screen = null
+	rotate_action = null
+
+/obj/machinery/computer/camera_advanced/shuttle_docker/trek/checkLandingTurf(turf/T)
+	return ..() && isspaceturf(T) //dont crash the fukken ship wesley FUCKING
+
+
+///////end trek stuff///////

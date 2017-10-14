@@ -81,7 +81,8 @@
 			sleep(40)
 			playsound(loc, 'sound/borg/machines/convert_table2.ogg', 50, 1, -1)
 			sleep(20)
-			ticker.mode.equip_borg_from_bench(M)
+			var/datum/mind/borg_mind = M.mind
+			borg_mind.make_xel()
 			overlays -= armoverlay
 			overlays -= armoroverlay
 			icon_state = "borg_off"
@@ -132,13 +133,11 @@
 				for(var/A in buckled_mobs)
 					if(ishuman(A))
 						var/mob/living/carbon/human/H = A
-						H.adjustBruteLoss(-2)
-						H.adjustFireLoss(-2)
+						H.adjustBruteLoss(-3)
+						H.adjustFireLoss(-3)
 					if(world.time >= saved_time2 + cooldown2)
 						saved_time2 = world.time
 						A << sound(sound)
-
-
 		else
 			return
 
@@ -234,7 +233,7 @@
 	. = ..()
 	if(!alreadyonehere)
 		ticker.mode.borg_machines_room_has_nav = 0 //when you delete it, if there is already one, means that you cant make infinite ones.
-
+/*
 
 /obj/machinery/borg/throne
 	name = "queen's throne"
@@ -244,7 +243,7 @@
 //	pixel_x = -32
 	bound_width = 96
 	layer = 4.5
-	var/obj/machinery/computer/camera_advanced/borg/computer
+	var/obj/machinery/computer/camera_advanced/borg/computer = null
 	can_buckle = 1
 	buckle_lying = 0
 	max_buckled_mobs = 1
@@ -253,26 +252,36 @@
 							/obj/item/weapon/stock_parts/borg/capacitor = 3,
 							/obj/item/weapon/stock_parts/borg = 5)
 
-
 /obj/machinery/borg/throne/user_unbuckle_mob(mob/living/buckled_mob/M)
 	. = ..()
 	for(var/m in buckled_mobs)
-		var/mob/living/carbon/human/P = m
+		var/mob/living/carbon/human/borgqueen/P = m
 		unbuckle_mob(m)
-		computer.remove_eye_control(P)
+		icon_state = "throne"
+		P.alpha = 255
 
-/obj/machinery/borg/throne/user_buckle_mob(mob/living/M, mob/user)
+/obj/machinery/borg/throne/user_buckle_mob(mob/living/carbon/human/borgqueen/M, mob/user)
 	. = ..()
-	var/mob/living/carbon/human/P = M
-	var/obj/machinery/computer/camera_advanced/borg/computerino = computer
-	computerino.attack_hand(P)
+	if(!istype(M, /mob/living/carbon/human/borgqueen))
+		return
+	if(!isborg(M))
+		return
+	var/mob/living/carbon/human/borgqueen/P = M
+	P.alpha = 0 //:^)
+	icon_state = "queenboltin"
+	sleep(20)
+	icon_state = "thronequeen"
+	buckle_mob(P)
+//	P.computer.attack_hand(user)
+
+
 
 /obj/machinery/borg/throne/New()
 	. = ..()
 	var/area/A = get_area(src)
 	if(ticker.mode.borg_machines_room_has_throne == 0)
 		if(istype(A, ticker.mode.borg_target_area))
-			computer = new /obj/machinery/computer/camera_advanced/borg(src)
+			computer = new(src) //obj/machinery/computer/camera_advanced/borg(src)
 			ticker.mode.borg_machines_room_has_throne = 1
 		//	src.say(ticker.mode.borg_machines_in_area)
 		else
@@ -282,6 +291,64 @@
 		qdel(src)
 
 /obj/machinery/borg/throne/Destroy()
+	. = ..()
+	if(!alreadyonehere)
+		ticker.mode.borg_machines_room_has_throne = 0 //when you delete it, if there is already one, means that you cant make infinite ones.
+
+//camera stuff, testing!
+
+*/
+
+/obj/machinery/computer/camera_advanced/borg/throne //:^)
+	name = "queen's throne"
+	desc = "A massive structure fit for a queen"
+	icon_state = "throne"
+	icon = 'icons/obj/machines/borg.dmi'
+	icon_screen = null
+	icon_keyboard = null
+	anchored = 1
+//	pixel_x = -32
+	bound_width = 96
+	layer = 4.5
+	can_buckle = 1
+	buckle_lying = 0
+	var/alreadyonehere = 0
+	max_buckled_mobs = 1
+	/*
+	parts = list(
+							/obj/item/weapon/stock_parts/borg/bin = 2,
+							/obj/item/weapon/stock_parts/borg/capacitor = 3,
+							/obj/item/weapon/stock_parts/borg = 5) */
+
+/obj/machinery/computer/camera_advanced/borg/throne/attack_hand(mob/living/carbon/human/borgqueen/M, mob/user)
+	. = ..()
+	if(!istype(M, /mob/living/carbon/human/borgqueen))
+		return
+	if(!isborg(M))
+		return
+	var/mob/living/carbon/human/borgqueen/P = M
+	P.alpha = 0 //:^)
+	icon_state = "queenboltin"
+	sleep(20)
+	icon_state = "thronequeen"
+	buckle_mob(P)
+//	P.computer.attack_hand(user)
+
+
+/obj/machinery/computer/camera_advanced/borg/throne/New()
+	. = ..()
+	var/area/A = get_area(src)
+	if(ticker.mode.borg_machines_room_has_throne == 0)
+		if(istype(A, ticker.mode.borg_target_area))
+			ticker.mode.borg_machines_room_has_throne = 1
+		//	src.say(ticker.mode.borg_machines_in_area)
+		else
+			src.say("not in the right area")
+	else
+		src.say("there is already one of those here")
+		qdel(src)
+
+/obj/machinery/computer/camera_advanced/borg/throne/Destroy()
 	. = ..()
 	if(!alreadyonehere)
 		ticker.mode.borg_machines_room_has_throne = 0 //when you delete it, if there is already one, means that you cant make infinite ones.
@@ -328,16 +395,10 @@
 
 /obj/item/weapon/circuitboard/machine/borg/throne
 	name = "assimilated circuit-board (queen throne)"
-	build_path = /obj/machinery/borg/throne
+	build_path = /obj/machinery/computer/camera_advanced/borg/throne
 	origin_tech = "programming=10;engineering=8"
 	req_components = list(
 							/obj/item/weapon/stock_parts/borg/bin = 2,
 							/obj/item/weapon/stock_parts/borg/capacitor = 1,
 							/obj/item/weapon/stock_parts/borg = 3)
 
-
-/obj/machinery/computer/camera_advanced/borg
-	name = "Xel camera access node"
-	desc = "Used to access the various cameras on the station."
-	icon_screen = "cameras"
-	icon_keyboard = "security_key"

@@ -1,0 +1,126 @@
+"aa" = (/turf/open/space,/area/space)
+"ab" = (/turf/closed/wall/shuttle/interior,/area/shuttle/trek)
+"ac" = (/turf/closed/wall/mineral/abductor,/area/shuttle/trek)
+"ad" = (/obj/docking_port/mobile/trek,/turf/closed/wall/mineral/abductor,/area/shuttle/trek)
+"ae" = (/turf/open/floor/engine,/obj/machinery/atmospherics/pipe/simple/cyan/visible{dir = 4},/turf/open/floor/plasteel/warningline,/area/shuttle/trek)
+"af" = (/turf/closed/wall/shuttle/interior{color = "#bcb491"},/area/shuttle/trek)
+"ag" = (/turf/closed/wall/shuttle/smooth{color = "#bcb491"},/area/shuttle/trek)
+"ah" = (/obj/structure/sign/fire,/turf/closed/wall/shuttle/smooth{color = "#bcb491"},/area/shuttle/trek)
+"ai" = (/obj/structure/closet,/turf/open/floor/borg/trek,/area/shuttle/trek)
+"aj" = (/turf/open/floor/borg/trek,/area/shuttle/trek)
+"ak" = (/obj/structure/bed,/obj/item/weapon/bedsheet/brown,/turf/open/floor/borg/trek,/area/shuttle/trek)
+"al" = (/obj/structure/shuttle/engine/propulsion{icon_state = "burst_l"; dir = 8},/turf/open/space,/area/shuttle/trek)
+"am" = (/obj/structure/disposalpipe/segment{dir = 4; icon_state = "pipe-c"},/turf/closed/wall/shuttle/interior{color = "#bcb491"},/area/shuttle/trek)
+"an" = (/obj/structure/disposalpipe/segment{dir = 4},/turf/closed/wall/shuttle/interior{color = "#bcb491"},/area/shuttle/trek)
+"ao" = (/obj/machinery/door/airlock/trek,/turf/open/floor/borg/trek,/area/shuttle/trek)
+"ap" = (/obj/structure/disposalpipe/segment,/turf/closed/wall/shuttle/interior{color = "#bcb491"},/area/shuttle/trek)
+"aq" = (/obj/structure/closet,/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"ar" = (/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"as" = (/obj/structure/bed,/obj/item/weapon/bedsheet/brown,/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"at" = (/turf/closed/wall/shuttle{dir = 8; icon_state = "diagonalWall3"},/area/shuttle/trek)
+"au" = (/turf/closed/wall/shuttle{icon_state = "wall3"},/area/shuttle/trek)
+"av" = (/obj/structure/disposalpipe/segment,/turf/closed/wall/shuttle/smooth{color = "#bcb491"},/area/shuttle/trek)
+"aw" = (/obj/structure/sign/securearea,/turf/closed/wall/shuttle/interior{color = "#bcb491"},/area/shuttle/trek)
+"ax" = (/obj/machinery/door/airlock/glass_large,/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"ay" = (/obj/structure/sign/nosmoking_2,/turf/closed/wall/shuttle/smooth{color = "#bcb491"},/area/shuttle/trek)
+"az" = (/obj/machinery/door/airlock/external,/turf/open/floor/engine,/area/shuttle/trek)
+"aA" = (/turf/closed/wall/shuttle{dir = 1; icon_state = "diagonalWall3"},/area/shuttle/trek)
+"aB" = (/obj/structure/lattice/catwalk,/obj/structure/disposalpipe/segment{dir = 4},/turf/open/space,/area/shuttle/trek)
+"aC" = (/obj/structure/disposalpipe/segment{dir = 4},/turf/closed/wall/shuttle{icon_state = "wall3"},/area/shuttle/trek)
+"aD" = (/obj/structure/disposalpipe/segment{dir = 4},/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"aE" = (/obj/structure/disposalpipe/segment{dir = 8; icon_state = "pipe-c"},/obj/structure/sign/securearea{desc = "A warning sign which reads 'HIGH VOLTAGE'"; icon_state = "shock"; name = "HIGH VOLTAGE"; pixel_y = 32},/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"aF" = (/obj/machinery/light{dir = 1},/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"aG" = (/turf/open/floor/borg/trek/blue,/area/shuttle/trek)
+"aH" = (/turf/open/floor/engine,/area/shuttle/trek)
+"aI" = (/obj/machinery/door/airlock/external,/obj/machinery/door/firedoor,/turf/open/floor/engine,/area/shuttle/trek)
+"aJ" = (/turf/closed/wall/shuttle/smooth,/area/shuttle/trek)
+"aK" = (/turf/closed/wall/shuttle/interior,/area/shuttle/abandoned)
+"aL" = (/turf/open/floor/borg/trek/light,/turf/closed/wall/shuttle{dir = 4; icon_state = "diagonalWall3"},/area/shuttle/trek)
+"aM" = (/turf/open/floor/borg/trek/light,/turf/closed/wall/shuttle{dir = 2; icon_state = "diagonalWall3"},/area/shuttle/trek)
+"aN" = (/obj/structure/window/shuttle,/obj/structure/grille,/turf/closed/wall/shuttle/interior{color = "#bcb491"},/area/shuttle/trek)
+"aO" = (/obj/machinery/door/airlock/trek,/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"aP" = (/obj/machinery/door/airlock/trek,/turf/open/floor/borg/trek/blue,/area/shuttle/trek)
+"aQ" = (/obj/structure/extinguisher_cabinet,/turf/closed/wall/shuttle/interior{color = "#bcb491"},/area/shuttle/trek)
+"aR" = (/obj/structure/sign/viewscreen{icon_state = "trekscreen"},/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"aS" = (/obj/structure/sign/viewscreen/lcars_redalert,/turf/closed/wall/shuttle/interior{color = "#bcb491"},/area/shuttle/trek)
+"aT" = (/obj/structure/sign/viewscreen/lcars,/turf/closed/wall/shuttle/interior{color = "#bcb491"},/area/shuttle/trek)
+"aU" = (/obj/structure/sign/viewscreen{icon_state = "trekscreen"},/obj/structure/window/reinforced{layer = 4.1},/turf/open/floor/borg/trek,/area/shuttle/trek)
+"aV" = (/obj/structure/window/reinforced{layer = 4.1},/obj/structure/chair/office/dark{dir = 4},/turf/open/floor/borg/trek,/area/shuttle/trek)
+"aW" = (/obj/structure/window/reinforced{layer = 4.1},/obj/structure/fluff/helm/desk{desc = "Systems: NOMINAL"; dir = 1; name = "engineering desk"},/turf/open/floor/borg/trek,/area/shuttle/trek)
+"aX" = (/obj/structure/grille,/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"aY" = (/obj/structure/fluff/helm{dir = 4},/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"aZ" = (/obj/structure/chair/office/dark{desc = "Should my butt go in this one?"; dir = 8},/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"ba" = (/turf/open/floor/borg/trek/red,/area/shuttle/trek)
+"bb" = (/obj/structure/chair/office/dark{dir = 8},/turf/open/floor/borg/trek/red,/area/shuttle/trek)
+"bc" = (/obj/structure/fluff/helm/desk{dir = 8; icon_state = "desk"},/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"bd" = (/obj/structure/sign/viewscreen/lcars{dir = 8},/turf/closed/wall/shuttle/interior{color = "#bcb491"},/area/shuttle/trek)
+"be" = (/turf/open/floor/borg/trek/dark,/area/shuttle/trek)
+"bf" = (/obj/structure/extinguisher_cabinet,/turf/closed/wall/shuttle/smooth,/area/shuttle/trek)
+"bg" = (/obj/machinery/door/airlock/survival_pod/vertical,/obj/machinery/door/firedoor,/turf/open/floor/borg/trek/blue,/area/shuttle/trek)
+"bh" = (/obj/structure/sign/vacuum,/turf/closed/wall/shuttle/smooth,/area/shuttle/trek)
+"bi" = (/obj/structure/fluff/helm/desk{dir = 8; icon_state = "desk"},/turf/open/floor/borg/trek/red,/area/shuttle/trek)
+"bj" = (/obj/structure/fluff/helm/desk/noisy{dir = 8},/turf/open/floor/borg/trek/red,/area/shuttle/trek)
+"bk" = (/obj/structure/chair/office/dark{dir = 4},/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"bl" = (/obj/structure/sign/viewscreen/lcars_tactical{dir = 8},/turf/closed/wall/shuttle/interior{color = "#bcb491"},/area/shuttle/trek)
+"bm" = (/obj/structure/chair/office/dark{dir = 4},/turf/open/floor/borg/trek/dark,/area/shuttle/trek)
+"bn" = (/obj/structure/fluff/helm/desk{desc = "Systems: NOMINAL"; dir = 4; name = "engineering desk"},/turf/open/floor/borg/trek/dark,/area/shuttle/trek)
+"bo" = (/obj/structure/fluff/warpcore,/turf/open/floor/borg/trek/dark,/area/shuttle/trek)
+"bp" = (/obj/machinery/light,/turf/open/floor/borg/trek,/area/shuttle/trek)
+"bq" = (/obj/structure/sign/viewscreen{dir = 8; icon_state = "trekscreenstars"},/turf/closed/wall/shuttle/smooth{color = "#bcb491"},/area/shuttle/trek)
+"br" = (/obj/machinery/computer/camera_advanced/shuttle_docker/trek,/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"bs" = (/obj/structure/sign/viewscreen/lcars{dir = 1},/turf/closed/wall/shuttle/interior{color = "#bcb491"},/area/shuttle/trek)
+"bt" = (/obj/structure/window/reinforced{dir = 1},/turf/open/floor/borg/trek,/area/shuttle/trek)
+"bu" = (/obj/structure/window/reinforced{dir = 1},/obj/structure/chair/office/dark{dir = 4},/turf/open/floor/borg/trek,/area/shuttle/trek)
+"bv" = (/obj/structure/window/reinforced{dir = 1},/obj/structure/fluff/helm/desk{desc = "Systems: NOMINAL"; dir = 1; name = "engineering desk"},/turf/open/floor/borg/trek,/area/shuttle/trek)
+"bw" = (/obj/structure/grille,/obj/structure/window/shuttle,/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"bx" = (/obj/structure/window/shuttle,/obj/structure/grille,/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"by" = (/turf/open/floor/borg/trek/light,/turf/closed/wall/shuttle{dir = 8; icon_state = "diagonalWall3"},/area/shuttle/trek)
+"bz" = (/obj/structure/sign/viewscreen{dir = 1; icon_state = "trekscreen"},/turf/closed/wall/shuttle/interior{color = "#bcb491"},/area/shuttle/trek)
+"bA" = (/obj/structure/sign/viewscreen{dir = 1; icon_state = "trekscreen"},/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"bB" = (/turf/open/floor/borg/trek/light,/turf/closed/wall/shuttle{dir = 1; icon_state = "diagonalWall3"},/area/shuttle/trek)
+"bC" = (/obj/structure/disposalpipe/segment{dir = 2; icon_state = "pipe-c"},/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"bD" = (/obj/machinery/light,/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"bE" = (/turf/closed/wall/shuttle{dir = 2; icon_state = "diagonalWall3"},/area/shuttle/trek)
+"bF" = (/turf/closed/wall/shuttle{dir = 4; icon_state = "diagonalWall3"},/area/shuttle/trek)
+"bG" = (/obj/structure/disposalpipe/segment,/obj/structure/sign/securearea{desc = "A warning sign which reads 'HIGH VOLTAGE'"; icon_state = "shock"; name = "HIGH VOLTAGE"; pixel_y = 32},/turf/closed/wall/shuttle/interior{color = "#bcb491"},/area/shuttle/trek)
+"bH" = (/obj/structure/chair,/turf/open/floor/borg/trek/light,/area/shuttle/trek)
+"bI" = (/obj/structure/disposalpipe/segment{dir = 1; icon_state = "pipe-c"},/turf/closed/wall/shuttle/interior{color = "#bcb491"},/area/shuttle/trek)
+"bJ" = (/obj/structure/table/reinforced,/turf/open/floor/borg/trek,/area/shuttle/trek)
+"bK" = (/obj/structure/chair,/turf/open/floor/borg/trek,/area/shuttle/trek)
+"bL" = (/obj/structure/table/wood,/turf/open/floor/borg/trek,/area/shuttle/trek)
+"bM" = (/obj/machinery/vending/boozeomat,/turf/open/floor/borg/trek,/area/shuttle/trek)
+"bN" = (/obj/structure/chair{dir = 4},/turf/open/floor/borg/trek,/area/shuttle/trek)
+"bO" = (/obj/structure/chair{dir = 8},/turf/open/floor/borg/trek,/area/shuttle/trek)
+
+(1,1,1) = {"
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaababacacacacadacacacacacababaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaabababaeaeaeaeaeaeaeaeaeaeaeabaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaabafafagagagagagagahagagagafababaaaaaaaaaa
+aaaaaaaaaaaaaaaaabafafafaiajakagajajagaiajakafalaaaaaaaaaaaa
+aaaaaaaaaaaaaaabafamanafajajajaoajajaoajajajafalaaaaaaaaaaaa
+aaaaaaaaaaaaabafafapafafaqarasagararagaqarasafalaaaaaaaaaaaa
+aaaaaaaaaaatauagagavagagagagagawaxarawayagagagagatazaAaaaaaa
+aaaaaaaaaaaBaCaDaDaEaFarararararaGaGararararaFagauaHauaaaaaa
+aaaaababafauaGaGaGaGaGaGaGaGaGaGaGaGaGaGaGaGaGagauaIauaJaJaJ
+aaaKagagagararaGaGararararaGaGaraGaGarararararagaLaGaMauauaJ
+abagafafafafaNaOafafaOafafaPaPafaoaoafafabababafaraGaraMauaJ
+abagaQaraRarararararararaSaGaGafajajaTajaUaVaWafaraGarararaJ
+abagaXaraYaZarbabbbcararbdaGaGafajbebebebebebebdbfbgbhaJaJaJ
+abagaXararararbibbbjarbkblaGaGafajbmbnbobebebeaoajaGajajbpaJ
+abbqaXarbraZarbabbbcararbdaGaGafajbebebebebebebdbfbgbhaJaJaJ
+abagaQarararararararararaSaGaGafajajbsajbtbubvafaraGarararaJ
+abagafafbwbwbxaOafafaOafafaPaPafaoaoafafbwbwbwafaraGarbyauaJ
+aaabagagbzararaGaGararararaGaGaraGaGararbAararagbBaGbyauauaJ
+aaaaababafauaGaGaGaGaGaGaGaGaGaGaGaGaGaGaGaGaGagauaIauaJaJaJ
+aaaaaaaaaaaBaCaDaDbCbDarararararaGaGararararbDagauaHauaaaaaa
+aaaaaaaaaabEauagagavagagagagagafaxarafayagagagagbEazbFaaaaaa
+aaaaaaaaaaaaabafafbGafafarbHararararararararafalaaaaaaaaaaaa
+aaaaaaaaaaaaaaabafbIananafbJajbKajajajbLbLbMafalaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaabafafafafafbNbJbOajajajajajafalaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaabafafafafagagagagahagagagagabababaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaabababaeaeaeaeaeaeaeaeaeaeaeaeabaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaababacacacacacacacacacacacababaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+"}

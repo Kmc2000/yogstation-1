@@ -186,6 +186,10 @@ var/list/teleportlocs = list()
 	  'sound/ambience/ambiruin5.ogg',  'sound/ambience/ambiruin6.ogg',  'sound/ambience/ambiruin7.ogg',\
 	'sound/ambience/ambidanger.ogg', 'sound/ambience/ambidanger2.ogg')
 
+
+/area/shuttle/trek
+	name = "nerdy star trek ship"
+
 /area/start
 	name = "start area"
 	icon_state = "start"

@@ -515,3 +515,31 @@
 
 /obj/machinery/door/airlock/glass_large/narsie_act()
 	return
+
+
+///////////////////////////////////
+//Xel / borg airlocks            //
+////////////////////////////////// kmc is cool
+
+/obj/machinery/door/airlock/borg
+	name = "assimilated airlock"
+	icon = 'icons/obj/doors/xel.dmi'
+	overlays_file = 'icons/obj/doors/xel.dmi' //no overlays :^)
+	doortype = /obj/structure/door_assembly/door_assembly_cult
+	hackProof = 1
+	aiControlDisabled = 1
+	var/openingoverlaytype = /obj/effect/overlay/temp/cult/door
+	var/friendly = FALSE
+
+/obj/machinery/door/airlock/borg/friendly
+	friendly = TRUE
+
+/obj/machinery/door/airlock/borg/allowed(mob/M)
+	var/datum/mind/meme = M.mind
+	if(!density)
+		return 1
+	if(meme in ticker.mode.borgs)
+		return 1
+	else
+		M << "The door does not respond to you..."
+		return 0

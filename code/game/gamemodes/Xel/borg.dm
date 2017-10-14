@@ -1,7 +1,7 @@
 
 /datum/game_mode
 	var/list/datum/mind/borg_minds = list()
-	var/list/borgs = list() //make our borgs list accessible via ticker.mode hopefully!
+	var/list/datum/mind/borgs = list() //make our borgs list accessible via ticker.mode hopefully!
 	var/borgspawn2 //where will we spawn our borg drones?
 	var/BORGinitialname //stores names of drones so we can rename them back to what they should be
 	var/borg_target_area //Working out what room they need to turn into the borg ship
@@ -10,16 +10,22 @@
 	var/borg_machines_room_has_ftl = 0 //has the target room get an FTL?
 	var/borg_machines_room_has_nav = 0 //has it got a navcomp?
 	var/borg_machines_room_has_throne = 0 //has it got throne?
+	var/datum/borg_hivemind/hivemind
 
 /datum/game_mode/proc/equip_borg(mob/living/carbon/human/borg_mob)
 	var/mob/living/carbon/human/H = borg_mob
-	BORGinitialname = borg_mob.name
 	H.set_species(/datum/species/human, 1) //or the lore makes 0% sense
+//	var/datum/mind/fuckfuckmeme = H.mind
+//	if(!fuckfuckmeme in borgs)
+	//	borgs += fuckfuckmeme
+	BORGinitialname = borg_mob.name
+	world << "reeee!!" //SKREE
+	for(var/obj/item/W in H)
+		qdel(W)
 	H.equipOutfit(/datum/outfit/borg, visualsOnly = FALSE)
+	world << "reee"//SKREE
 	H.skin_tone = "albino"
 	H.update_body()
-	if(!H in borgs)
-		borgs += src
 	for(var/obj/item/organ/O in H.internal_organs) //what if the borg to make already has the organ? :thonkig:
 		if(istype(O, /obj/item/organ/body_egg/borgNanites))
 			return
@@ -27,35 +33,12 @@
 			var/obj/item/organ/body_egg/borgNanites/G = new(borg_mob)
 			G.Insert(borg_mob)
 
-/datum/game_mode/proc/equip_borg_from_bench(mob/living/carbon/human/H)
-	BORGinitialname = H.name
-	H.equipOutfit(/datum/outfit/borg, visualsOnly = FALSE)
-	H.skin_tone = "albino"
-	H.update_body()
-	if(!H in borgs)
-		borgs += src
-
-/datum/game_mode/proc/greet_borg_from_bench(mob/H)
-	H << "<font style = 3><B><span class = 'notice'>We don't belong here...not in this universe</B></font>"
-	H << "<b>The last thing the collective remembers is a flash of white light and a quiet whooshing sound.</b>"
-	H << "<b>Our ship was damaged, we must construct a new one.</b>"
-	H << "<b>We have a borg tool, it can be used to <span class='warning'>assimilate</span> objects, and people.</b>"
-	H << "<b>Use it on a victim, and after 5 seconds you will inject borg nanites into their bloodstream, making them a <span class='warning'>half drone</span>, once they are a half drone (with grey skin) take them to a conversion table (buildable)</b>"
-	H << "<b>Buckle them into the conversion table and keep them down for 10 seconds, after this they will join the collective as a full drone</b>"
-	H << "<b>Half drones are loyal to the collective, we should use them to remain somewhat discreet in our kidnapping of the crew as our drones build a base.</b>"
-	H << "<b>Killing is an absolute last resort, a dead human cannot be assimilated.</b>"
-	H << "<b>We do not require food, but we can't heal ourselves through conventional means, we require a <span class='warning'>specialized recharger (buildable)</span> </b>"
-	H << "<b>We must construct a new ship in a suitably large room on this station, only begin this when we are ready to take on the crew.</b>"
-	H << "<b>We can assimilate turfs (walls and floors) by clicking them with the borg tool on ASSIMILATE MODE, these are upgradeable by our queen later</b>"
-	H << "<b>Finally, If you are struggling, refer to this guide: LINK GOES HERE.com</b>"
-	H << "We are a new drone, if we are struggling we should ask the collective for help"
-
-
 /datum/game_mode/proc/remove_borg(mob/living/carbon/human/borg_mob)
 	ticker.mode.borgs -= borg_mob
 	var/mob/living/carbon/human/H = borg_mob
 	H.set_species(/datum/species/human, 1) //or the lore makes 0% sense
 	H.skin_tone = "caucasian"
+	H.dna.species.specflags -= BORG_DRONE
 	H.update_body()
 	H.equipOutfit(/datum/outfit, visualsOnly = FALSE)
 	H.name = BORGinitialname//fix this shit ree
@@ -100,7 +83,7 @@
 	config_tag = "borg"
 	antag_flag = ROLE_BORG
 	required_players = 1 //change me
-	required_enemies = 3//3
+	required_enemies = 1//3
 	recommended_enemies = 5
 	restricted_jobs = list("Cyborg", "AI")
 	var/borgs_to_make = 1
@@ -108,26 +91,29 @@
 	var/escaped_borg = 0
 	var/players_per_borg = 1
 	var/const/drones_possible = 5
-	var/meme = 0
+	var/finished = 0
+
 
 /datum/game_mode/borg/pre_setup() //changing this to the aliens code to spawn a load in maint
-//	var/validareas = /area/ai_monitored/nuke_storage //change me
-	var/validareas = list(/area/bridge,/area/bridge/meeting_room,/area/tcommsat,/area/crew_quarters/fitness,/area/security/brig,/area/ai_monitored/nuke_storage,/area/atmos, /area/engine/engineering) //valid areas that are large enough for the borgos to overtake
+	var/validareas = /area/ai_monitored/nuke_storage //change me
+//	var/validareas = list(/area/bridge,/area/bridge/meeting_room,/area/tcommsat,/area/crew_quarters/fitness,/area/security/brig,/area/atmos, /area/engine/engineering, /area/crew_quarters/locker) //valid areas that are large enough for the borgos to overtake
 	borg_target_area = pick(validareas)
 	var/n_players = num_players()
 	var/n_drones = 1 //min(round(n_players / 10, 1), drones_possible)
 //	var/n_drones = 5
-
 	if(antag_candidates.len < n_drones) //In the case of having less candidates than the selected number of agents
 		n_drones = antag_candidates.len
-
 	var/list/datum/mind/borg_drone = pick_candidate(amount = n_drones)///pick_candidate(amount = n_drones)
 	update_not_chosen_candidates()
 	for(var/v in borg_drone)
 		var/datum/mind/new_borg = v
 		borgs += new_borg
+		world << "borgmind chosen"//SKREE
 		new_borg.assigned_role = "xel"
 		new_borg.special_role = "xel"//So they actually have a special role/N
+		world << "special role done"//SKREE
+	if(!hivemind)
+		new /datum/borg_hivemind
 	return 1
 
 /datum/objective/assimilate
@@ -136,6 +122,11 @@
 /datum/objective/assimilate/check_completion()
 	return
 
+/datum/game_mode/proc/forge_borg_objectives(datum/mind/borg_mind)
+	var/datum/objective/O
+	O = new /datum/objective/assimilate()
+	O.explanation_text = "Convert [borg_target_area] into a borg cube by assimilating ALL turfs inside, and building an FTL drive, shield subsystem, a queen's throne and a navigational console."
+	borg_mind.objectives += O
 
 /datum/game_mode/borg/post_setup()
 	for(var/obj/effect/landmark/A in landmarks_list)
@@ -144,16 +135,12 @@
 			world << "<b> Found a borg spawn! </b>"
 			continue
 	for(var/datum/mind/borg_mind in borgs)
-		world << "<b> TEST! borgmind is [borg_mind] at [borg_mind.current.loc] </b>"
+	//	world << "<b> TEST! borgmind is [borg_mind] at [borg_mind.current.loc] </b>"
+		//var/fuck = new /mob/living/carbon/human
 		ticker.mode.greet_borg(borg_mind)
 		ticker.mode.equip_borg(borg_mind.current)
-		var/datum/objective/O
-	//	var/area/A = get_area(borg_target_area)
-	//	var/locname = initial(A.name)
-		O = new /datum/objective/assimilate()
-		message_admins("XEL NEED TO TAKE OVER [borg_target_area] OK?, cool.")
-		O.explanation_text = "Convert [borg_target_area] into a borg cube by assimilating ALL turfs inside, and building an FTL drive, shield subsystem, a queen's throne and a navigational console."
-		borg_mind.objectives += O
+		ticker.mode.forge_borg_objectives(borg_mind)
+		message_admins("XEL NEED TO TAKE OVER [borg_target_area]")
 	//	borg_mind.current.loc = borg_spawn// add me later[spawnpos]
 		borg_mind.current.loc = borgspawn2
 //		var/obj/item/organ/body_egg/borgNanites/G = new(borg_mind.current)
@@ -166,15 +153,11 @@
 
 //species 4678 (or unathi)</span> and <span class='warning'>Species 4468 (or phytosians) 5618 (or humans)
 
-//datum/game_mode/borg/check_finished()
-//	return check_borg_victory()
-
-/datum/game_mode/borg/proc/check_borg_victory()
-//	var/borgwin = 0
-//	if(ticker.mode.borg_completion_assimilation == 1)
-//		return 1
-//	else
-//		return 0
+/datum/game_mode/borg/check_finished()
+	if(finished)
+		return 1
+	else
+		return 0
 
 /datum/game_mode/proc/auto_declare_completion_borg()
 	if(borgs.len || (ticker && istype(ticker.mode,/datum/game_mode/borg)) )
@@ -184,6 +167,25 @@
 
 		text += "<br>"
 		world << text
+
+
+/datum/game_mode/borg/check_win()
+	if(check_borg_victory())
+		finished = 1
+	return
+
+
+/datum/game_mode/borg/proc/check_borg_victory()
+	if(ticker.mode.borg_completion_assimilation && ticker.mode.borg_machines_room_has_ftl && ticker.mode.borg_machines_room_has_nav && ticker.mode.borg_machines_room_has_throne) //add in the other once i've made their structures
+		finished = 1
+	//	ticker.current_state = GAME_STATE_FINISHED
+	else
+		finished = 0
+//	var/borgwin = 0
+//	if(ticker.mode.borg_completion_assimilation == 1)
+//		return 1
+//	else
+//		return 0
 
 /datum/game_mode/borg/declare_completion()
 	if(ticker.mode.borg_completion_assimilation && ticker.mode.borg_machines_room_has_ftl && ticker.mode.borg_machines_room_has_nav && ticker.mode.borg_machines_room_has_throne) //add in the other once i've made their structures
@@ -214,3 +216,38 @@
 	else
 		return 0
 */
+
+
+//HIVEMIND//
+
+//Alright, so I'm gonna handle upgrades here instead of on the borg tool, and also notifying people when someone's being converted. Also I'm gonna have a proc to broadcast events to the borg because I'm a good coder... right? HAHAHHA//
+//Thanks to cruix, I stole some ideas from your code
+
+/datum/borg_hivemind
+	var/upgrade_progress
+	var/upgrade_tier // what tier are they at?
+	var/mob/living/carbon/human/borgqueen/queen
+	var/upgrade_points = 0 //generated by living drones
+	var/rate_of_upgrade = 2 //2 points per borg drone, per tick
+	var/max_upgrade_points = 5000
+	var/message // what message to broadcast.
+
+/datum/borg_hivemind/New()
+	ticker.mode.hivemind = src
+	START_PROCESSING(SSobj, src)
+	message_admins("Xel hivemind started up.")
+
+/datum/borg_hivemind/proc/message_collective()
+	var/ping = "<font color='green' size='2'><B><i>Xel collective</i> Hivemind notice: [message]</B></font></span>"
+	for(var/mob/living/I in world)
+		if(I.mind in ticker.mode.borgs)
+			I << ping
+			continue
+	for(var/mob/M in dead_mob_list)
+		M << ping
+
+/datum/borg_hivemind/process() //upgrades! upgrade points are built up over time.
+	for(var/mob/living/I in ticker.mode.borgs)
+		upgrade_points += rate_of_upgrade
+	if(upgrade_points == max_upgrade_points*0.2) //20% stored
+		world << "ree"

@@ -172,6 +172,12 @@
 		ticker.mode.borgs -= src
 	special_role = null
 	var/mob/living/carbon/human/H = current
+	H.dna.species.specflags -= BORG_DRONE
+	H.dna.species.specflags -= NOCLONE
+	H.dna.species.specflags -= CLUMSY
+	H.dna.species.specflags -= NOHUNGER
+	H.dna.species.specflags -= NOGUNS
+	H.dna.species.specflags -= NOBREATH
 	ticker.mode.remove_borg(H)
 	remove_objectives()
 
@@ -1496,9 +1502,6 @@
 				message_admins("[key_name_admin(usr)] has sent [current] to the xel mothership.")
 				log_admin("[key_name(usr)] has sent [current] to the xel mothership.")
 				send_to_xel_ship(src)
-
-
-
 	else if (href_list["common"])
 		switch(href_list["common"])
 			if("undress")
@@ -1560,11 +1563,12 @@
 /datum/mind/proc/make_xel()
 	if(quiet_round)
 		return
+	special_role = "Xel"
+	ticker.mode.greet_borg(src)
+	ticker.mode.forge_borg_objectives(src)
+	ticker.mode.equip_borg(current)
 	if(!(src in ticker.mode.borgs))
 		ticker.mode.borgs += src
-		special_role = "Xel"
-		ticker.mode.greet_borg(src)
-		ticker.mode.equip_borg(current)
 /datum/mind/proc/send_to_xel_ship()
 	current.loc = ticker.mode.borgspawn2
 	current << "You appear out of thin air!"

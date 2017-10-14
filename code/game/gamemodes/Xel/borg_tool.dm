@@ -21,6 +21,14 @@
 	var/norun = 0 //stops infinite chair spam
 	var/obj/item/borg_checker/checker
 	var/dismantling_machine = 0
+	var/blacklistedmachines = list(/obj/machinery/computer/communications, /obj/machinery/computer/card, /obj/machinery/computer/shuttle/syndicate/drop_pod/borg)
+
+/obj/item/borg_tool/queen
+	name = "master borg tool"
+	desc = "A modified Xel tool, it hangs from the arm slightly more daintily than the usual type."
+	item_state = "borgtool"
+	origin_tech = null
+	icon_state = "borgtool"
 
 /obj/item/borg_tool/examine(mob/user)
 	. = ..()
@@ -128,6 +136,7 @@
 				if(!isborg(A))
 					I << "<span class='warning'>You feel an immense jolt of pain as [user] sinks two metallic proboscises into you!.</span>"
 					user << "<span class='warning'>We plunge two metallic proboscises into [I], conversion will begin shortly.</span>"
+					A.Stun(10)
 					if(do_after(user, convert_time, target = A)) //EXPLANATION: I'm doing convert stuff here as i already have my target and user defined HERE.
 						A.can_dream = 0 //androids do not dream of electric sheep
 						A.reset_perspective()
@@ -163,7 +172,7 @@
 			else if(issilicon(I) && isliving(I))
 				I << "<span class='warning'>Your systems limiter blares an alarm as [user] rips into you with their [src]!.</span>"
 				user << "<span class='warning'>We rip into [I] with [src], conversion will begin shortly.</span>"
-				if(istype(I, /mob/living/silicon/robot))
+				if(istype(I, /mob/living/silicon/robot) && !(src in ticker.mode.borgs))
 					var/mob/living/silicon/robot/A = I
 					if(do_after(user, convert_time, target = A))
 						A.SetLockdown(1)
@@ -199,6 +208,9 @@
 						A.icon_state = "xel"
 						A.SetLockdown(0)
 						A.assimilated()
+						var/datum/mind/borg_mind = A.mind
+						ticker.mode.greet_borg(borg_mind)
+						ticker.mode.borgs += A
 
 				else if(istype(I, /mob/living/silicon/ai))
 					var/mob/living/silicon/ai/A = I
@@ -208,7 +220,8 @@
 						A.laws = new /datum/ai_laws/borg_override
 						A.set_zeroth_law("<span class='danger'>ERROR ER0RR $R0RRO$!R41 Assimilate the crew into the Xel collective, their resistance will be futile.</span>")
 						A << sound('sound/borg/overmind/silicon_assimilate.ogg')
-						ticker.mode.greet_borg_from_bench(A)
+						var/datum/mind/borg_mind = A.mind
+						ticker.mode.greet_borg(borg_mind)
 						ticker.mode.borgs += A
 						sleep(60) //so we dont get overlapping sounds
 						for(var/mob/living/silicon/B in world)
@@ -216,38 +229,46 @@
 			else if(istype(I, /turf/open))
 				var/turf/open/A = I
 				norun = 0
-				var/canrun = 0
 				if(buildmode)
 					var/obj/structure/CP = locate() in A
 					var/obj/machinery/CA = locate() in A
 					if(CP || CA) //something be there yar
 						user << "<span class='danger'>[I] already has a structure on it.</span>"
-						norun = 1
 						A = null
-						canrun = 0
 						return
-					else				//all tiles turn invalid if you click another tile before youre done with the first
+	//all tiles turn invalid if you click another tile before youre done with the first
+					norun = 1 //stop spamming
+					user << "<span class='danger'>We are building a structure ontop of [I].</span>"
+					if(do_after(user, convert_time, target = A))
+						new building(get_turf(A))
 						norun = 0
-						canrun = 1
-						if(canrun)
-							norun = 1 //stop spamming
-							user << "<span class='danger'>We are building a structure ontop of [I].</span>"
-							if(do_after(user, convert_time, target = A))
-								new building(get_turf(A))
-								norun = 0
+					norun = 0
 				else
 					user << "<span class='danger'>We are assimilating [I].</span>"
 					if(do_after(user, convert_time, target = A))
 						A.ChangeTurf(/turf/open/floor/borg)
 			else if(istype(I, /turf/closed/wall))
-				if(!istype(I, /turf/closed/wall/borg) || !istype(I, /turf/closed/indestructible))
-					playsound(src.loc, 'sound/borg/machines/convertx.ogg', 40, 4)
-					user << "<span class='danger'>We are assimilating [I].</span>"
-					var/turf/closed/wall/A = I
-					if(do_after(user, convert_time, target = A))
-						A.ChangeTurf(/turf/closed/wall/borg)
+				if(!istype(I, /turf/closed/indestructible))
+					if(istype(I, /turf/closed/wall/borg)) //convert wall to door
+						playsound(src.loc, 'sound/borg/machines/convertx.ogg', 40, 4)
+						user << "<span class='danger'>We are making an opening in [I].</span>"
+						var/turf/closed/wall/A = I
+						if(do_after(user, 100, target = A))
+							A.ChangeTurf(/turf/open/floor/borg)
+							var/obj/machinery/door/airlock/T = new /obj/machinery/door/airlock/borg( A )
+							T.electronics = new/obj/item/weapon/electronics/airlock( src.loc )
+							user << "We have made an opening in the wall"
+					else
+						playsound(src.loc, 'sound/borg/machines/convertx.ogg', 40, 4)
+						user << "<span class='danger'>We are assimilating [I].</span>"
+						var/turf/closed/wall/A = I
+						if(do_after(user, convert_time, target = A))
+							A.ChangeTurf(/turf/closed/wall/borg)
+
+
+
 			else if(istype(I, /obj/machinery/computer))
-				if(!istype(I, /obj/machinery/computer/communications) || !istype(I, /obj/machinery/computer/card) || !istype(I, /obj/machinery/computer/shuttle/syndicate/drop_pod/borg))
+				if(!(I.type in blacklistedmachines))
 					if(!dismantling_machine)
 						dismantling_machine = 1
 						var/obj/machinery/computer/C = I
@@ -301,6 +322,25 @@
 						new /obj/item/weapon/stock_parts/borg/capacitor(G.loc)
 						qdel(G)
 					dismantling_machine = 0
+			else if(istype(I, /obj/machinery/r_n_d))
+				if(!dismantling_machine)
+					dismantling_machine = 1
+					playsound(src.loc, 'sound/borg/machines/convertmachine.ogg', 40, 4)
+					var/obj/machinery/r_n_d/G = I
+					if(do_after(user, convert_time, target = G))
+						new /obj/item/weapon/stock_parts/borg(G.loc)
+						new /obj/item/weapon/stock_parts/borg/bin(G.loc)
+						new /obj/item/weapon/stock_parts/borg/capacitor(G.loc)
+						new /obj/item/weapon/stock_parts/borg/capacitor(G.loc)
+						qdel(G)
+					dismantling_machine = 0
+			else if(istype(I, /obj/machinery/door/airlock) && !istype(I, /obj/machinery/door/airlock/borg))
+				var/obj/machinery/door/airlock/G = I
+				user << "We are assimilating [I]"
+				playsound(src.loc, 'sound/borg/machines/convertmachine.ogg', 40, 4)
+				if(do_after(user, 100, target = G)) //twice as long to convert a door
+					new /obj/machinery/door/airlock/borg(G.loc)
+					qdel(G)
 
 		if(mode == 2) //attack mode
 			if(istype(I, /obj/machinery/door/airlock) && !removing_airlock)
@@ -368,8 +408,8 @@
 	if(istype(A, ticker.mode.borg_target_area))
 		src.visible_message("A is the target area")
 		for(var/turf/T in get_area_turfs(A))
-			if(istype(T, /turf))
-				user << "turfs in a: [turfs_in_a]" //turfs remaining
+			if(istype(T, /turf) && !istype(T, /turf/open/space))
+			//	user << "turfs in a: [turfs_in_a]" //turfs remaining
 				turfs_in_a ++
 			if(istype(T, /turf/open/floor/borg))
 				borg_turfs_in_target ++
@@ -377,7 +417,12 @@
 			if(istype(T, /turf/closed/wall/borg))
 				borg_turfs_in_target ++
 				turfs_in_a --
-		user << "There are [turfs_in_a] remaining, un-assimilated turfs in [locname], and [borg_turfs_in_target] of those turfs are borg turfs."
+		var/turfs_in_a_math = turfs_in_a - borg_turfs_in_target
+		if(turfs_in_a_math > 0)
+			user << "You must assimilate [locname] more turfs to render this area suitable for a cube."
+		else
+			user << "We have completely assimilated [locname]"
+		ticker.mode.check_win()
 		if(!announced)
 			if(borg_turfs_in_target > turfs_in_a) //60% or more of the turfs are assimilated
 				announced = 1

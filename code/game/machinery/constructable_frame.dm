@@ -6,6 +6,7 @@
 	anchored = 1
 	var/obj/item/weapon/circuitboard/circuit = null
 	var/state = 1
+	var/bypass = 0 //special bypass
 
 /obj/structure/frame/examine(user)
 	..()
