@@ -56,6 +56,7 @@ var/list/airlock_overlays = list()
 	var/boltUp = 'sound/machines/BoltsUp.ogg'
 	var/boltDown = 'sound/machines/BoltsDown.ogg'
 	var/noPower = 'sound/machines/DoorClick.ogg'
+	var/bleepamount = 3 //blep blep blep on deny.
 
 	var/airlock_material = null //material of inner filling; if its an airlock with glass, this should be set to "glass"
 	var/overlays_file = 'icons/obj/doors/airlocks/station/overlays.dmi'
@@ -374,7 +375,7 @@ var/list/airlock_overlays = list()
 		if("deny")
 			if(!stat)
 				update_icon(AIRLOCK_DENY)
-				playsound(src,doorDeni,50,0,3)
+				playsound(src,doorDeni,50,0,bleepamount) //CHANGE ME BACK!
 				sleep(6)
 				update_icon(AIRLOCK_CLOSED)
 

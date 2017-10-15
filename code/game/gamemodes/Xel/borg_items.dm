@@ -136,7 +136,7 @@
 	user.visible_message("[user] begins to repair [target]'s wounds.", "<span class ='notice'>You begin to repair [target]'s wounds...</span>")
 	var/mob/living/carbon/H = target //oops not user XD
 //	ewoverlay.ntransform.TurnTo(90)
-	H.overlays -= image("icon"='icons/obj/surgery.dmi', "icon_state"="incision")
+	H.overlays -= image("icon"='icons/obj/surgery.dmi', "icon_state"="incise")
 	H.overlays -= image("icon"='icons/obj/surgery.dmi', "icon_state"="retract")
 	H.overlays -= image("icon"='icons/obj/surgery.dmi', "icon_state"="saw2")
 	H.overlays -= image("icon"='icons/obj/surgery.dmi', "icon_state"="sawbeating")
@@ -587,6 +587,12 @@
 	icon_state = "trekfloor"
 	smooth = SMOOTH_FALSE //change this when I make a smooth proper version
 
+/turf/open/floor/borg/trek/beige
+	name = "carpet"
+	desc = "A carpeted floor that matches the surroundings."
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "trek5"
+	smooth = SMOOTH_FALSE //change this when I make a smooth proper version
 
 /obj/machinery/door/airlock/trek
 	name = "airlock"
@@ -594,9 +600,11 @@
 	icon_state = "closed"
 	doorOpen = 'sound/borg/machines/tngdooropen.ogg'
 	doorClose = 'sound/borg/machines/tngdoorclose.ogg'
-	doorDeni = 'sound/borg/machines/tngchime.ogg' // i'm thinkin' Deni's
+	boltUp = 'sound/borg/machines/tngchime.ogg' // i'm thinkin' Deni's
+	doorDeni = 'sound/borg/machines/tngchime.ogg'
+	boltDown = 'sound/borg/machines/tngchime.ogg'
 	overlays_file = 'icons/obj/doors/trek.dmi'
-
+	bleepamount = 1
 
 /obj/structure/fluff/warpcore
 	name = "warp core"
@@ -605,8 +613,31 @@
 	icon_state = "warp"
 	anchored = TRUE
 	density = 1
-	opacity = 0
+	opacity = 0 //I AM LOUD REEE WATCH OUT
 	layer = 4.5
+	var/cooldown2 = 115 //11.5 second cooldown
+	var/saved_time = 0
+
+/obj/structure/sign/trek
+	name = "ship markings"
+	icon_state = "trek1"
+
+/obj/structure/sign/trek/ncc
+	name = "ship markings"
+	icon_state = "trek3"
+
+/obj/structure/sign/trek/ncc/a
+	name = "ship markings"
+	icon_state = "trek4"
+
+/obj/structure/fluff/warpcore/New()
+	. = ..()
+	START_PROCESSING(SSobj, src)
+
+/obj/structure/fluff/warpcore/process()
+	if(world.time >= saved_time + cooldown2)
+		saved_time = world.time
+		playsound(src.loc, "sound/borg/machines/engihum.ogg", 150, 0, 4)
 
 /obj/structure/fluff/helm
 	name = "helm control"
@@ -715,7 +746,7 @@
 	desc = "make it so."
 	circuit = /obj/item/weapon/circuitboard/computer/white_ship
 	shuttleId = "trekship"
-	possible_destinations = "trekship_station;trekshipaway"
+	possible_destinations = "trek_custom"
 	icon = 'icons/obj/machines/borg_decor.dmi'
 	icon_state = "helm"
 	anchored = TRUE
@@ -725,27 +756,41 @@
 	icon_keyboard = null
 	icon_screen = null
 
+/obj/machinery/computer/shuttle/white_ship/trek/attackby()
+	return 0
+
+/obj/machinery/computer/shuttle/white_ship/trek/emp_act()
+	return 0
+
 /obj/docking_port/mobile/trek //aaaa
-	name = "uss something"
+	name = "uss something xd"
 	id = "trekship"
-	dwidth = 3
-	width = 30
-	height = 27
+	dwidth = 14
+	height = 22
+	travelDir = 180
+	dir = 2
+	width = 35
+	dheight = 0
+/*
+	dwidth = 20
+	dheight = 0
+	width = 38
+	height = 19
+	dir = 8
+*/
 
 /obj/machinery/computer/camera_advanced/shuttle_docker/trek
-	name = "advanced helm control"
-	desc = "Used to designate a precise transit location for the syndicate shuttle."
-	dir = 8 //by default
-	z_lock = ZLEVEL_STATION
-	shuttlePortId = "trek_custom"
-	shuttlePortName = "warp beacon"
-	jumpto_ports = list("syndicate_away", "syndicate_z5", "syndicate_ne", "syndicate_nw", "syndicate_n", "syndicate_se", "syndicate_sw", "syndicate_s")
-	view_range = 30
-	x_offset = -4
-	y_offset = -2
-	shuttleId = "trekship"
+	name = "Helm Control"
+	z_lock = 1
 	icon = 'icons/obj/machines/borg_decor.dmi'
 	icon_state = "helm"
+	shuttleId = "trekship"
+	shuttlePortId = "trek_custom"
+	shuttlePortName = "warp beacon"
+	jumpto_ports = list("trekshipaway", "syndicate_ne", "syndicate_nw", "trek_custom", "syndicate_se", "syndicate_sw", "syndicate_s")
+	x_offset = 0
+	y_offset = 3
+	rotate_action = null
 	anchored = TRUE
 	density = 1
 	opacity = 0
@@ -753,9 +798,251 @@
 	icon_keyboard = null
 	icon_screen = null
 	rotate_action = null
+	dir = 8
+//	view_range = 20 DO NOT CHANGE THIS BREAKS SHIT
+
+
+/obj/machinery/computer/camera_advanced/shuttle_docker/trek/attackby()
+	return 0
+
+/obj/machinery/computer/camera_advanced/shuttle_docker/trek/emp_act()
+	return 0
 
 /obj/machinery/computer/camera_advanced/shuttle_docker/trek/checkLandingTurf(turf/T)
 	return ..() && isspaceturf(T) //dont crash the fukken ship wesley FUCKING
 
+//transporter!
 
+
+/obj/machinery/computer/transporter_control
+	name = "transporter control station"
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "helm"
+	dir = 4
+	icon_keyboard = null
+	icon_screen = null
+	layer = 4.5
+	var/list/applicable_locs = list()
+	var/list/locnames = list()
+	var/list/retrievable = list()
+	var/list/linked = list()
+
+/obj/machinery/computer/transporter_control/New()
+	link_to()
+	. = ..()
+
+
+/obj/machinery/computer/transporter_control/proc/link_to()
+	var/thearea = get_area(src)
+	for(var/obj/structure/trek/transporter/T in thearea)
+		linked += T
+		T.linked += linked
+
+/obj/item/device/pattern_enhancer
+	name = "pattern enhancer"
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "enhancer"
+	desc = "used to enhance signals for transportation"
+
+/obj/machinery/computer/transporter_control/attack_hand(mob/user)
+	var/A
+	var/B
+	B = input(user, "Mode:","Transporter Control",B) in list("send object","receieve away team member", "cancel")
+	switch(B)
+		if("send object")
+			A = input(user, "Target", "Transporter Control", A) as null|anything in teleportlocs
+			var/area/thearea = teleportlocs[A]
+			if(!thearea)
+				return
+			playsound(src.loc, 'sound/borg/machines/transporter.ogg', 40, 4)
+			var/list/L = list()
+			for(var/turf/T in get_area_turfs(thearea.type))
+				if(!T.density)
+					var/clear = 1
+					for(var/obj/O in T)
+						if(O.density)
+							clear = 0
+							break
+					if(clear)
+						L+=T
+			if(!L || !L.len)
+				usr << "No area available."
+			for(var/obj/structure/trek/transporter/T in linked)
+				T.icon_state = "transporter_on"
+			for(var/obj/structure/trek/transporter/T in linked)
+				T.energize()
+				var/atom/movable/meme = T.Target
+				T.icon_state = "transporter_on"
+			//	anim(meme.loc,meme,'icons/obj/machines/borg_decor.dmi',"transportout")
+				if(T.validcheck())
+					if(T.Target !=null)
+						meme.alpha = 0
+						meme.loc = pick(L)
+						T.rematerialize()
+						retrievable += meme
+					else
+						T.icon_state = "transporter" //erroroneus meme!
+				else
+					T.icon_state = "transporter" //erroroneus meme!
+					playsound(src.loc, 'sound/borg/machines/alert2.ogg', 40, 4)
+					user << "Transport pattern buffer initialization failure."
+				meme = null
+				T.icon_state = "transporter"
+		if("receieve away team member")
+			var/C = input(user, "Beam someone back", "Transporter Control") as anything in retrievable
+			if(!C in retrievable)
+				return
+			var/atom/movable/target = C
+			playsound(src.loc, 'sound/borg/machines/transporter.ogg', 40, 4)
+			retrievable -= target
+			for(var/obj/structure/trek/transporter/T in linked)
+				var/obj/structure/trek/transporter/Z = pick(linked)
+				target.forceMove(Z.loc)
+				Z.rematerialize()
+				break
+			target = null
+		if("cancel")
+			return
+/obj/machinery/computer/transporter_control/attackby()
+	return 0
+
+/turf/closed/trekshield
+	name = "interior shields"
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "shield"
+	blocks_air = 1
+	density = 0
+	opacity = 0
+/turf/closed/trekshield/attackby()
+	return 0
+
+/obj/structure/trek/transporter
+	name = "transporter pad"
+	density = 0
+	anchored = 1
+	can_be_unanchored = 0
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "transporter"
+	var/target_loc = list() //copied
+	var/Target
+	var/fail = 0 //failed?
+	var/list/linked = list()
+	var/list/things_on_telepad = list()
+
+/obj/structure/trek/transporter/proc/validcheck()
+	if(things_on_telepad.len)
+		return 1
+	else
+		Target = null
+		return 0
+/obj/structure/trek/transporter/attackby(mob/user)
+	return 0
+
+//obj/structure/trek/transporter/proc/get_target()
+
+/obj/structure/trek/transporter/proc/energize()	 //atom/movable
+	fail = 0
+	icon_state = "transporter_on"
+	var/turf/source = get_turf(src)
+	for(var/atom/movable/ROI in source)
+		things_on_telepad += ROI
+		if(ROI in linked)
+			things_on_telepad -= ROI
+
+	for(var/atom/movable/ROI in things_on_telepad)
+		var/atom/movable/target = ROI
+		Target = target
+		if(ROI.anchored)
+			if(isliving(ROI))
+				var/mob/living/L = ROI
+				L.Stun(3)
+				if(L.buckled)
+					// TP people on office chairs
+					if(L.buckled.anchored)
+						continue
+				else
+					continue
+			else if(!isobserver(ROI))
+				continue
+		if(ismob(ROI))
+			var/mob/T = ROI
+			T.Stun(3)
+		icon_state = "transporter_on"
+		target.dir = 1 //:^)
+		anim(target.loc,target,'icons/obj/machines/borg_decor.dmi',"transportout")
+		target.alpha = 0
+		icon_state = "transporter"
+
+/*
+	for(var/atom/movable/ROY in loc)
+		Target = ROY
+		if(ROY.anchored)
+			icon_state = "transporter"
+			fail = 1
+			return
+		else
+			if(isliving(ROY))
+				var/mob/living/target = ROY
+				target.dir = 1 //:^)
+				target.Stun(3)
+				anim(target.loc,target,'icons/obj/machines/borg_decor.dmi',"transportout")
+				target.alpha = 0
+				var/mob/living/H = ROY
+				if(H && H.buckled)
+					H.buckled.unbuckle_mob(H, force=1)
+			else
+				var/atom/movable/target = ROY
+				target.alpha = 0
+			//	do_teleport(ROY, target_loc)
+	icon_state = "transporter"
+	fail = 0
+*/
+
+/obj/structure/trek/transporter/proc/rematerialize()
+	icon_state = "transporter_on"
+	var/atom/movable/target = Target
+	target.alpha = 255
+	playsound(target.loc, 'sound/borg/machines/transporter2.ogg', 40, 4)
+	anim(target.loc,target,'icons/obj/machines/borg_decor.dmi',,"transportin")
+	icon_state = "transporter"
+
+
+
+	//		last_target = target
+		//	var/area/A = get_area(target)
+
+
+/*
+/obj/structure/trek/transporter/proc/retrieve(mob/target)
+	if(target in retrievables)
+		icon_state = "transporter_on"
+		target.dir = 1 //:^)
+		target.Stun(10)
+		anim(target.loc,target,'icons/obj/machines/borg_decor.dmi',,"transportout")
+		playsound(target.loc, 'sound/borg/machines/transporter2.ogg', 40, 4)
+		var/mob/living/H = target
+		H.forceMove(loc)
+		anim(target.loc,target,'icons/obj/machines/borg_decor.dmi',,"transportin")
+		icon_state = "transporter"
+	else
+		return
+*/
+
+
+//if(locate(/obj/structure/alien/weeds) in owner.loc)
+
+
+
+/*
+							switch(board)
+								if("FTL")
+									new /obj/item/weapon/circuitboard/machine/borg/FTL(C.loc)
+									qdel(C)
+								if("NAVICOMP")
+									new /obj/item/weapon/circuitboard/machine/borg/navicomp(C.loc)
+									qdel(C)
+								if("THRONE")
+									new /obj/item/weapon/circuitboard/machine/borg/throne(C.loc)
+									qdel(C)
+*/
 ///////end trek stuff///////
