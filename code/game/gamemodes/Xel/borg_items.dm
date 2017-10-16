@@ -813,6 +813,11 @@
 
 //transporter!
 
+/obj/item/device/pattern_enhancer
+	name = "pattern enhancer"
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "enhancer"
+	desc = "used to enhance signals for transportation"
 
 /obj/machinery/computer/transporter_control
 	name = "transporter control station"
@@ -828,21 +833,17 @@
 	var/list/linked = list()
 
 /obj/machinery/computer/transporter_control/New()
-	link_to()
 	. = ..()
+	link_to()
 
 
 /obj/machinery/computer/transporter_control/proc/link_to()
 	var/thearea = get_area(src)
 	for(var/obj/structure/trek/transporter/T in thearea)
+		world << "linked a transporter"
 		linked += T
 		T.linked += linked
 
-/obj/item/device/pattern_enhancer
-	name = "pattern enhancer"
-	icon = 'icons/obj/machines/borg_decor.dmi'
-	icon_state = "enhancer"
-	desc = "used to enhance signals for transportation"
 
 /obj/machinery/computer/transporter_control/attack_hand(mob/user)
 	var/A
@@ -867,27 +868,26 @@
 						L+=T
 			if(!L || !L.len)
 				usr << "No area available."
+			//end area select
 			for(var/obj/structure/trek/transporter/T in linked)
 				T.icon_state = "transporter_on"
-			for(var/obj/structure/trek/transporter/T in linked)
 				T.energize()
-				var/atom/movable/meme = T.Target
-				T.icon_state = "transporter_on"
-			//	anim(meme.loc,meme,'icons/obj/machines/borg_decor.dmi',"transportout")
-				if(T.validcheck())
-					if(T.Target !=null)
-						meme.alpha = 0
-						meme.loc = pick(L)
-						T.rematerialize()
-						retrievable += meme
-					else
-						T.icon_state = "transporter" //erroroneus meme!
+				if(T.Target != null)
+					var/atom/movable/target = T.Target
+				//	anim(meme.loc,meme,'icons/obj/machines/borg_decor.dmi',"transportout")
+					target.alpha = 0
+					target.loc = pick(L)
+					T.rematerialize(target)
+					retrievable += target
+					T.Target = null
+					T.things_on_telepad -= target
 				else
 					T.icon_state = "transporter" //erroroneus meme!
-					playsound(src.loc, 'sound/borg/machines/alert2.ogg', 40, 4)
-					user << "Transport pattern buffer initialization failure."
-				meme = null
-				T.icon_state = "transporter"
+			//	else
+			//		T.icon_state = "transporter" //erroroneus meme!
+				//	playsound(src.loc, 'sound/borg/machines/alert2.ogg', 40, 4)
+				//	user << "Transport pattern buffer initialization failure."
+				//meme = null
 		if("receieve away team member")
 			var/C = input(user, "Beam someone back", "Transporter Control") as anything in retrievable
 			if(!C in retrievable)
@@ -898,23 +898,15 @@
 			for(var/obj/structure/trek/transporter/T in linked)
 				var/obj/structure/trek/transporter/Z = pick(linked)
 				target.forceMove(Z.loc)
-				Z.rematerialize()
+				Z.rematerialize(target)
+				anim(Z.loc,Z,'icons/obj/machines/borg_decor.dmi',,"transportin")
+			//	Z.alpha = 255
 				break
-			target = null
 		if("cancel")
 			return
 /obj/machinery/computer/transporter_control/attackby()
 	return 0
 
-/turf/closed/trekshield
-	name = "interior shields"
-	icon = 'icons/obj/machines/borg_decor.dmi'
-	icon_state = "shield"
-	blocks_air = 1
-	density = 0
-	opacity = 0
-/turf/closed/trekshield/attackby()
-	return 0
 
 /obj/structure/trek/transporter
 	name = "transporter pad"
@@ -925,7 +917,6 @@
 	icon_state = "transporter"
 	var/target_loc = list() //copied
 	var/Target
-	var/fail = 0 //failed?
 	var/list/linked = list()
 	var/list/things_on_telepad = list()
 
@@ -941,69 +932,74 @@
 //obj/structure/trek/transporter/proc/get_target()
 
 /obj/structure/trek/transporter/proc/energize()	 //atom/movable
-	fail = 0
+	Target = null
 	icon_state = "transporter_on"
 	var/turf/source = get_turf(src)
-	for(var/atom/movable/ROI in source)
-		things_on_telepad += ROI
-		if(ROI in linked)
-			things_on_telepad -= ROI
-
-	for(var/atom/movable/ROI in things_on_telepad)
-		var/atom/movable/target = ROI
-		Target = target
-		if(ROI.anchored)
-			if(isliving(ROI))
-				var/mob/living/L = ROI
+	for(var/atom/movable/M in source)
+		if(M != src)
+			Target = M
+			if(ismob(M))
+				var/mob/living/L = M
 				L.Stun(3)
-				if(L.buckled)
-					// TP people on office chairs
-					if(L.buckled.anchored)
-						continue
-				else
-					continue
-			else if(!isobserver(ROI))
-				continue
-		if(ismob(ROI))
-			var/mob/T = ROI
-			T.Stun(3)
-		icon_state = "transporter_on"
-		target.dir = 1 //:^)
-		anim(target.loc,target,'icons/obj/machines/borg_decor.dmi',"transportout")
-		target.alpha = 0
-		icon_state = "transporter"
+			M.dir = 1
+			anim(ONPAD.loc,M,'icons/obj/machines/borg_decor.dmi',"transportout")
+		//	REE.alpha = 0
+			icon_state = "transporter"
+		//	things_on_telepad -= REE
+
+
+/turf/closed/trekshield
+	name = "interior shields"
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "shield"
+	blocks_air = 1
+	density = 0
+	opacity = 0
+/turf/closed/trekshield/attackby()
+	return 0
+
+
 
 /*
-	for(var/atom/movable/ROY in loc)
-		Target = ROY
-		if(ROY.anchored)
-			icon_state = "transporter"
-			fail = 1
-			return
-		else
-			if(isliving(ROY))
-				var/mob/living/target = ROY
+	if(validcheck())
+		icon_state = "transporter_on"
+		var/turf/source = get_turf(src)
+		for(var/atom/movable/ROI in things_on_telepad)
+			for(var/atom/movable/T in Target)
+				var/atom/movable/target = T
+				if(ROI.anchored)
+					if(isliving(ROI))
+						var/mob/living/L = ROI
+						L.Stun(3)
+						if(L.buckled)
+							// TP people on office chairs
+							if(L.buckled.anchored)
+								continue
+						else
+							continue
+					else if(!isobserver(ROI))
+						continue
+				if(ismob(ROI))
+					var/mob/TT = ROI
+					TT.Stun(3)
+				icon_state = "transporter_on"
 				target.dir = 1 //:^)
-				target.Stun(3)
 				anim(target.loc,target,'icons/obj/machines/borg_decor.dmi',"transportout")
 				target.alpha = 0
-				var/mob/living/H = ROY
-				if(H && H.buckled)
-					H.buckled.unbuckle_mob(H, force=1)
-			else
-				var/atom/movable/target = ROY
-				target.alpha = 0
-			//	do_teleport(ROY, target_loc)
-	icon_state = "transporter"
-	fail = 0
+				icon_state = "transporter"
+			//	Target = null
+				ROI = null
+			things_on_telepad -= ROI
+			Target = null
+			return 1
+
 */
 
-/obj/structure/trek/transporter/proc/rematerialize()
+/obj/structure/trek/transporter/proc/rematerialize(var/atom/movable/thing)
+//	var/atom/movable/target = Target
 	icon_state = "transporter_on"
-	var/atom/movable/target = Target
-	target.alpha = 255
-	playsound(target.loc, 'sound/borg/machines/transporter2.ogg', 40, 4)
-	anim(target.loc,target,'icons/obj/machines/borg_decor.dmi',,"transportin")
+	thing.alpha = 255
+	playsound(thing.loc, 'sound/borg/machines/transporter2.ogg', 40, 4)
 	icon_state = "transporter"
 
 
