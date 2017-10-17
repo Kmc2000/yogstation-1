@@ -811,8 +811,18 @@
 /obj/machinery/computer/camera_advanced/shuttle_docker/trek/checkLandingTurf(turf/T)
 	return ..() && isspaceturf(T) //dont crash the fukken ship wesley FUCKING
 
-//transporter!
+/turf/closed/trekshield
+	name = "interior shields"
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "shield"
+	blocks_air = 1
+	density = 0
+	opacity = 0
+/turf/closed/trekshield/attackby()
+	return 0
 
+//transporter!
+/*
 /obj/item/device/pattern_enhancer
 	name = "pattern enhancer"
 	icon = 'icons/obj/machines/borg_decor.dmi'
@@ -1042,3 +1052,5 @@
 									qdel(C)
 */
 ///////end trek stuff///////
+
+*/
