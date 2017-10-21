@@ -818,7 +818,7 @@
 	desc = "make it so."
 	circuit = /obj/item/weapon/circuitboard/computer/white_ship
 	shuttleId = "trekshuttle"
-	possible_destinations = "trek_custom_shuttle"
+	possible_destinations = "trek_custom_shuttle,trekshuttlehome"
 	icon = 'icons/obj/machines/borg_decor.dmi'
 	icon_state = "helm"
 	anchored = TRUE
@@ -874,7 +874,7 @@
 
 /obj/item/clothing/combadge
 	name = "combadge"
-	desc = "A neosilk clip-on tie."
+	desc = "A clip on communication device, alt click it to broadcast, ctrl click it to mute the radio."
 	icon = 'icons/obj/machines/borg_decor.dmi'
 	icon_state = "combadge"
 	item_state = ""	//no inhands
@@ -884,6 +884,8 @@
 	var/obj/item/device/radio/embedded
 	actions_types = list(/datum/action/item_action/combadge,/datum/action/item_action/combadge/turn_off)
 	unacidable = 1
+	var/datum/action/item_action/combadge/broadcast_action = new
+	var/datum/action/item_action/combadge/turn_off/mute_action = new
 
 /datum/action/item_action/combadge
 	name = "toggle combadge broadcast"
@@ -902,6 +904,12 @@
 		activate(user)
 	else if(actiontype == /datum/action/item_action/combadge/turn_off)
 		deactivate(user)
+
+/obj/item/clothing/combadge/tie/CtrlClick(mob/user)
+	deactivate(user)
+
+/obj/item/clothing/combadge/tie/AltClick(mob/user)
+	activate(user)
 
 /obj/item/clothing/combadge/proc/activate(mob/user)
 	playsound(loc, 'sound/borg/machines/combadge.ogg', 50, 1)
@@ -925,19 +933,32 @@
 	. = ..()
 	embedded = new/obj/item/device/radio(src)
 
+
+
 /obj/item/clothing/combadge/afterattack(atom/U, mob/user)
 	if(istype(U, /obj/item/clothing/under))
 		var/obj/item/clothing/under/W = U
 		if(W.hastie)
 			user << "This already has a tie, [src] can't go over a normal tie"
 		else
+			W.attachTie(src, user)
+			mute_action.target = user
+			mute_action.Grant(user)
+			actions += mute_action
+			broadcast_action.target = user
+			broadcast_action.Grant(user)
+			actions += broadcast_action
+			/*
 			W.hastie = src
 			transform *= 0.5	//halve the size so it doesn't overpower the under
 			pixel_x += 8
 			pixel_y -= 8
 			layer = FLOAT_LAYER
 			W.overlays += src
-			loc = user //shitcode :^)
+			qdel(src)
+			new /obj/item/clothing/combadge(user)
 			user << "you've attached [src] to [W]"
+			*/
 	else
 		return
+

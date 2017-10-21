@@ -111,7 +111,7 @@
 	transporter_controller.retrievable += M
 	M.alpha = 0
 	M.forceMove(pick(available_turfs))
-	animate(M)
+//	animate(M)
 	if(ismob(M))
 		var/mob/living/L = M
 		L.Stun(3)
@@ -122,7 +122,10 @@
 	icon_state = "transporter_on"
 	for(var/atom/movable/M in get_turf(src))
 		if(M != src)
+			anim(M.loc,'icons/obj/machines/borg_decor.dmi',"transportin")
 			teleport(M, available_turfs)
+			rematerialize(M)
+	icon_state = "transporter"
 
 
 /obj/structure/trek/transporter/proc/rematerialize(var/atom/movable/thing)
