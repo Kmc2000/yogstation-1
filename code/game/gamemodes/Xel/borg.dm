@@ -98,7 +98,7 @@
 	var/validareas = /area/ai_monitored/nuke_storage //change me
 //	var/validareas = list(/area/bridge,/area/bridge/meeting_room,/area/tcommsat,/area/crew_quarters/fitness,/area/security/brig,/area/atmos, /area/engine/engineering, /area/crew_quarters/locker) //valid areas that are large enough for the borgos to overtake
 	borg_target_area = pick(validareas)
-	var/n_players = num_players()
+//	var/n_players = num_players()
 	var/n_drones = 1 //min(round(n_players / 10, 1), drones_possible)
 //	var/n_drones = 5
 	if(antag_candidates.len < n_drones) //In the case of having less candidates than the selected number of agents

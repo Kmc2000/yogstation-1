@@ -439,6 +439,7 @@
 #include "code\game\gamemodes\Xel\borg_structures.dm"
 #include "code\game\gamemodes\Xel\borg_tool.dm"
 #include "code\game\gamemodes\Xel\queen.dm"
+#include "code\game\gamemodes\Xel\ship.dm"
 #include "code\game\gamemodes\Xel\transporter.dm"
 #include "code\game\gamemodes\zombie\zombie.dm"
 #include "code\game\golf\golf.dm"

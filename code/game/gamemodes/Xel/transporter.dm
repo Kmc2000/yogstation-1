@@ -79,13 +79,14 @@
 			playsound(src.loc, 'sound/borg/machines/transporter.ogg', 40, 4)
 			retrievable -= target
 			for(var/obj/structure/trek/transporter/T in linked)
+				anim(target.loc,target,'icons/obj/machines/borg_decor.dmi',"transportout")
 				playsound(target.loc, 'sound/borg/machines/transporter2.ogg', 40, 4)
 				playsound(src.loc, 'sound/borg/machines/transporter.ogg', 40, 4)
 				var/obj/structure/trek/transporter/Z = pick(linked)
 				target.forceMove(Z.loc)
 				target.alpha = 255
 			//	Z.rematerialize(target)
-				anim(Z.loc,'icons/obj/machines/borg_decor.dmi',"transportin")
+				anim(Z.loc,Z,'icons/obj/machines/borg_decor.dmi',"transportin")
                         //        Z.alpha = 255
 				break
 		if("cancel")
@@ -106,23 +107,24 @@
 	var/obj/machinery/computer/transporter_control/transporter_controller = null
 
 /obj/structure/trek/transporter/proc/teleport(var/atom/movable/M, available_turfs)
-	anim(loc,'icons/obj/machines/borg_decor.dmi',"transportout")
+	anim(M.loc,M,'icons/obj/machines/borg_decor.dmi',"transportout")
 	M.dir = 1
-	transporter_controller.retrievable += M
+	if(!src in transporter_controller.retrievable)
+		transporter_controller.retrievable += M
 	M.alpha = 0
 	M.forceMove(pick(available_turfs))
 //	animate(M)
 	if(ismob(M))
 		var/mob/living/L = M
 		L.Stun(3)
-	//	anim(M.loc , M,'icons/obj/machines/borg_decor.dmi',"transportin")
+		anim(M.loc , M,'icons/obj/machines/borg_decor.dmi',"transportin")
 	icon_state = "transporter"
 
 /obj/structure/trek/transporter/proc/teleport_all(available_turfs)
 	icon_state = "transporter_on"
 	for(var/atom/movable/M in get_turf(src))
 		if(M != src)
-			anim(M.loc,'icons/obj/machines/borg_decor.dmi',"transportin")
+		//	anim(M.loc,'icons/obj/machines/borg_decor.dmi',"transportin")
 			teleport(M, available_turfs)
 			rematerialize(M)
 	icon_state = "transporter"

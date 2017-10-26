@@ -649,16 +649,6 @@
 	opacity = 0
 	layer = 4.5
 
-/obj/structure/fluff/helm/desk
-	name = "tactical"
-	desc = "A computer built into a desk, showing ship manifests, weapons, tactical systems, anything you could want really, the manifest shows a long list but the 4961 irradiated haggis listing catches your eye..."
-	icon = 'icons/obj/machines/borg_decor.dmi'
-	icon_state = "desk"
-	anchored = TRUE
-	density = 1 //SKREE
-	opacity = 0
-	layer = 4.5
-
 
 /obj/structure/fluff/helm/desk/noisy //makes star trek noises!
 	name = "captain's display"
@@ -941,13 +931,7 @@
 		if(W.hastie)
 			user << "This already has a tie, [src] can't go over a normal tie"
 		else
-			W.attachTie(src, user)
-			mute_action.target = user
-			mute_action.Grant(user)
-			actions += mute_action
-			broadcast_action.target = user
-			broadcast_action.Grant(user)
-			actions += broadcast_action
+		//	W.attachTie(src, user)
 			/*
 			W.hastie = src
 			transform *= 0.5	//halve the size so it doesn't overpower the under
@@ -962,3 +946,203 @@
 	else
 		return
 
+//tricord//
+
+#define NO_SCANNER 0
+#define HAS_SCANNER 1
+#define OPEN 1
+#define CLOSED 0
+#define MEDICAL_MODE 1
+#define SCIENCE_MODE 2
+
+//tricorder scanner.Doesn't actually do anything, it's just required to be able to scan.
+/obj/item/weapon/tricordscanner
+	name = "tricorder scanner"
+	desc = "A tricorder scanner. Hold a tricorder in one hand to recieve the results."
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "tricorder_scn"
+	w_class = 1
+	var/obj/item/device/t_scanner/rayscan //attack
+	var/obj/item/device/t_scanner/adv_mining_scanner/miningscan //attackself
+	var/obj/item/device/analyzer/gasscan //attackself
+	var/obj/item/device/detective_scanner/detscan //attackself to print, afterattack to scan
+	var/medical = 0
+
+/obj/item/weapon/tricordscanner/New()
+	. = ..()
+	rayscan = new /obj/item/device/t_scanner(src)
+	miningscan =  new /obj/item/device/t_scanner/adv_mining_scanner(src) //attackself
+	gasscan = new /obj/item/device/analyzer(src) //attackself
+	detscan = new /obj/item/device/detective_scanner(src) //attackself to print, afterattack to scan
+
+/obj/item/weapon/tricordscanner/proc/tricorder_med()
+
+
+/obj/item/weapon/tricordscanner/afterattack(atom/I, mob/user)
+	medical = 0
+	if(istype(I, /obj/item/device/tricorder))
+		return I.attackby(src, user)
+	if(tricorder_science_mode(I, user))
+		var/B
+		B = input(user, "Select mode:","Tricorder scanner",B) in list("t ray scanner","mining scanner","gas analyzer","detective scanner", "cancel")
+		switch(B)
+			if("t ray scanner")
+				rayscan.attack_self(user)
+			if("mining scanner")
+				miningscan.attack_self(user)
+			if("gas analyzer")
+				gasscan.attack_self(user)
+			if("detective scanner")
+				detscan.scan(I, user)
+				sleep(40)
+				detscan.attack_self(user)
+			if("cancel")
+				return
+	else if(medical)
+		if(ismob(I))
+			var/mob/living/M = I
+			healthscan(user, M)
+			chemscan(user, M)
+			medical = 0
+			return
+		else
+			return
+	else
+		user << "You need a tricorder set to science mode in your inventory to use this!"
+	//	if(!B.len)
+	//		. = ..()
+
+/obj/item/weapon/tricordscanner/proc/tricorder_science_mode(atom/I, mob/living/carbon/human/user)
+//	var/obj/item/weapon/tricordscanner/F
+	for(var/obj/item/device/tricorder/T in user.contents)
+		if(!istype(T))
+			return 0
+		if(T.open == CLOSED)
+			return 0
+		if(T.setting == MEDICAL_MODE)
+			medical = 1
+			return 0
+		//	healthscan(user, M)
+		//	chemscan(user, M)
+		//	return 0 //not in science mode! return to sender
+		if(T.setting == SCIENCE_MODE)
+		//	user << "<span class='notice'>Function currently unavailible. We apologise for the inconvenience. </span>"
+			return 1 //OK they want to scan stuff, continue on afterattack
+	user << "<span class=`warning`>You must have a tricorder in your inventory to use this!</span>" //not in science mode! return to sender
+	return
+
+
+/obj/item/device/tricorder
+	name = "tricorder"
+	desc = "Utilized in the fields of repairwork, analyzing, and containing a variety of useful information."
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "tricorder"
+	slot_flags = SLOT_BELT
+	materials = list(MAT_METAL=55, MAT_GLASS=45)
+	w_class = 2
+	var/open = 0
+	var/setting = MEDICAL_MODE
+	var/scannerstatus = HAS_SCANNER
+	var/obj/item/weapon/tricordscanner/tscanner
+
+/obj/item/device/tricorder/New()
+	..()
+	open = CLOSED
+	update_icon()
+	tscanner = new /obj/item/weapon/tricordscanner(src)
+//	else
+//		update_icon()
+//		return new /obj/item/weapon/tricordscanner
+
+
+/obj/item/device/tricorder/update_icon()
+	switch(open)
+		if(CLOSED)
+			icon_state = "tricorder_closed"
+		else if(OPEN)
+			icon_state = "tricorder"
+		else
+			return
+
+
+/obj/item/device/tricorder/AltClick()
+	toggle_open()
+
+/obj/item/device/tricorder/proc/toggle_open(mob/user) // Open/close it for muh ARPEEEEEEE
+	var/mob/living/carbon/human/M = user
+//	if(user != M) //ehhh redundant
+	//	return
+	add_fingerprint(M)
+	if(open == CLOSED)
+		open = OPEN
+		update_icon()
+	else
+		open = CLOSED
+		update_icon()
+
+
+/obj/item/device/tricorder/attack_self(mob/user)
+	if(open == CLOSED)
+		toggle_open()
+	switch(setting)
+		if(MEDICAL_MODE)
+			setting = SCIENCE_MODE
+			user << "<span class=`notice`> You enable the science analyzer.</span>"
+			update_icon()
+		if(SCIENCE_MODE)
+			setting = MEDICAL_MODE
+			user << "<span class=`notice`> You enable the medical scanner.</span>"
+			update_icon()
+		else
+			return
+
+/obj/item/device/tricorder/attack_hand(mob/user)
+	switch(open)
+		if(CLOSED)
+			..()
+			return
+		if(OPEN)
+			remove_scanner(user)
+			update_icon()
+			return
+	..()
+
+/obj/item/device/tricorder/proc/remove_scanner(mob/user) // remove scanner
+	if(loc == user) //you already sorta defined that, but redundancy doesnt hurt
+		if(open == CLOSED)
+			return
+		if(scannerstatus == NO_SCANNER)
+			user << "<span class='warning'> The scanner compartment is empty!</span>"
+			return
+		else if(scannerstatus == HAS_SCANNER)
+			if(!usr.put_in_hands(tscanner))
+				user << "You need a free hand to carry the [tscanner]"
+				update_icon()
+				return
+			tscanner.loc = user
+			tscanner = null
+			update_icon()
+	..()
+
+/obj/item/device/tricorder/attackby(obj/item/C, mob/user, params)
+	if(istype(C, /obj/item/weapon/tricordscanner))
+		if(C in user.contents)
+			tscanner = new /obj/item/weapon/tricordscanner(src)
+			user << "<span class='notice'>You put the [C] into \the [src]'s slot.</span>"
+			qdel(C)
+			scannerstatus = HAS_SCANNER
+			update_icon()
+		return
+	..()
+
+
+
+
+
+
+#undef NO_SCANNER
+#undef HAS_SCANNER
+#undef OPEN
+#undef CLOSED
+#undef MEDICAL_MODE
+#undef SCIENCE_MODE
