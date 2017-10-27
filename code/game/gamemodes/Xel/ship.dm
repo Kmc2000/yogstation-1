@@ -129,11 +129,11 @@
 	var/obj/effect/adv_shield/S = pick(shields)
 	S.regen = regen
 	S.calculate()
-	world << "calculating:"
-	world << "regen rate[regen]"
-	world << "maxhealth: [S.maxhealth]"
-	world << "health: [S.health]"
-	world << "________________"
+//	world << "calculating:"
+//	world << "regen rate[regen]"
+//	world << "maxhealth: [S.maxhealth]"
+//	world << "health: [S.health]"
+	//world << "________________"
 
 
 /obj/effect/landmark/shield
