@@ -14,6 +14,56 @@
 	idle_power_usage = 200
 	var/on = 0 // power me up daddy
 	var/controller = null
+	var/health = 1050 //charge them up
+	var/maxhealth = 20000
+	var/flux_rate = 100
+	var/flux = 1
+	var/heat = 0
+	var/regen = 0
+
+/obj/machinery/machinemachine
+	name = "machine machine broke"
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "ecm"
+	density = 1
+	var/health = 1050 //charge them up
+	var/maxhealth = 20000
+	var/flux_rate = 100
+	var/flux = 1
+	var/heat = 0
+	var/regen = 0
+/obj/machinery/machinemachine/attack_hand()
+	world << "regen rate[regen]"
+	world << "maxhealth: [maxhealth]"
+	world << "health: [health]"
+	world << "heat: [heat]"
+	calculate()
+
+/obj/machinery/machinemachine/proc/calculate()
+	flux_rate = flux*100
+	regen = (flux*flux_rate)
+	//heat += 50
+	health += regen
+	world << "calculating:"
+	world << "regen rate[regen]"
+	world << "maxhealth: [maxhealth]"
+	world << "health: [health]"
+	world << "heat: [heat]"
+	if(health >= maxhealth)
+		regen += (flux*flux_rate)
+/obj/machinery/machinemachine/AltClick()
+	world << "damage! heat at:[heat]"
+	health -= 500
+
+/obj/machinery/machinemachine/CtrlClick()
+	world << "reset!"
+	health = 1050 //charge them up
+	maxhealth = 20000
+	flux_rate = 50
+	flux = 1
+	heat = 0
+	regen = 0
+
 
 /obj/machinery/space_battle/shield_generator/attack_hand(mob/user)
 	toggle(user)
@@ -72,6 +122,20 @@
 		S.health -= damage
 	return 1
 
+
+/obj/machinery/space_battle/shield_generator/process()
+	flux_rate = flux*100
+	regen = (flux*flux_rate)
+	var/obj/effect/adv_shield/S = pick(shields)
+	S.regen = regen
+	S.calculate()
+	world << "calculating:"
+	world << "regen rate[regen]"
+	world << "maxhealth: [S.maxhealth]"
+	world << "health: [S.health]"
+	world << "________________"
+
+
 /obj/effect/landmark/shield
 	name = "shield marker"
 	icon = 'icons/effects/effects.dmi'
@@ -86,12 +150,16 @@
 	anchored = 1
 	var/obj/machinery/space_battle/shield_generator/generator
 	var/health = 1050 //charge them up
-	var/maxhealth = 10000
+	var/maxhealth = 20000
 	var/in_dir = 2
 	var/list/friendly = list() //friendly phasers that are linked, have this change ON DISMANTLE ok?
+	var/regen = 0 //inherited from generator
 
 /obj/effect/adv_shield/CanAtmosPass(turf/T)
-	return !density
+	if(density)
+		return 0
+	else
+		return 1
 
 /obj/effect/adv_shield/New()
 	. = ..()
@@ -121,19 +189,27 @@
 	else
 		return
 
+/obj/effect/adv_shield/proc/calculate()
+	for(var/obj/effect/adv_shield/S in generator.shields)
+		S.health += regen
+		if(S.health > maxhealth)
+			S.health = maxhealth
+
 /obj/effect/adv_shield/process()
 	if(!density) //in otherwords, not active
 		if(health <= 1000) //once they go down, they must charge back up a bit
-			health += 50
+			health += 50 //slowly recharge
 		else
 			activate()
 	if(health < maxhealth)
-		health += 100
+		calculate()
+	//	health += regen
 	else
 		return
 	if(health <= 0)
 		health = 0
 		return deactivate()
+//	calculate()
 
 /obj/effect/adv_shield/proc/percentage(damage)
 	var/counter
@@ -149,7 +225,7 @@
 	return
 
 /obj/effect/adv_shield/ex_act(severity)
-	var/damage = 600*severity
+	var/damage = 300*severity
 	percentage(damage)
 	var/datum/effect_system/spark_spread/s = new
 	s.set_up(2, 1, src)
@@ -168,6 +244,10 @@
 	s.start()
 	return 1
 	*/
+//obj/effect/adv_shield/attackby(/obj/item/weapon/I)
+//	. = ..()
+//	var/obj/item/weapon/A = I
+//	take_damage(A.force)
 
 /obj/effect/adv_shield/proc/take_damage(amount)
 //	if(!CanPass(mover))
@@ -232,7 +312,7 @@
 	var/active = 0
 	var/datum/beam/current_beam = null
 	var/mounted = 1 //Denotes if this is a handheld or mounted version
-	var/damage = 600
+	var/damage = 1500
 	var/cooldown = 20 //2 second beam duration
 	var/saved_time = 0
 	weapon_weight = WEAPON_MEDIUM
@@ -550,7 +630,7 @@
 //DEFINE TARGET
 
 /area/ship
-	name = "A starship"
+	name = "USS Cadaver"
 	icon_state = "ship"
 	requires_power = 0 //fix
 	has_gravity = 1
@@ -569,7 +649,7 @@
 
 
 /area/ship/target
-	name = "blank target area"
+	name = "USS adminbus"
 	icon_state = "ship"
 
 
