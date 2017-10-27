@@ -33,10 +33,10 @@
 	var/heat = 0
 	var/regen = 0
 /obj/machinery/machinemachine/attack_hand()
-	world << "regen rate[regen]"
-	world << "maxhealth: [maxhealth]"
-	world << "health: [health]"
-	world << "heat: [heat]"
+//	world << "regen rate[regen]"
+//	world << "maxhealth: [maxhealth]"
+//	world << "health: [health]"
+//	world << "heat: [heat]"
 	calculate()
 
 /obj/machinery/machinemachine/proc/calculate()
@@ -44,11 +44,11 @@
 	regen = (flux*flux_rate)
 	//heat += 50
 	health += regen
-	world << "calculating:"
-	world << "regen rate[regen]"
-	world << "maxhealth: [maxhealth]"
-	world << "health: [health]"
-	world << "heat: [heat]"
+//	world << "calculating:"
+//	world << "regen rate[regen]"
+//	world << "maxhealth: [maxhealth]"
+//	world << "health: [health]"
+//	world << "heat: [heat]"
 	if(health >= maxhealth)
 		regen += (flux*flux_rate)
 /obj/machinery/machinemachine/AltClick()
