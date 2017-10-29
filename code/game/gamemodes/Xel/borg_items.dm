@@ -637,7 +637,7 @@
 /obj/structure/fluff/warpcore/process()
 	if(world.time >= saved_time + cooldown2)
 		saved_time = world.time
-		playsound(src.loc, "sound/borg/machines/engihum.ogg", 150, 0, 4)
+		playsound(src.loc, "sound/borg/machines/engihum.ogg", 200, 0, 4)
 
 /obj/structure/fluff/helm
 	name = "helm control"

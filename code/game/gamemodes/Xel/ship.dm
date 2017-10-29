@@ -74,6 +74,7 @@
 		on = 0 //turn off
 		for(var/obj/effect/adv_shield/S in shields)
 			S.deactivate()
+			S.active = 0
 		return
 	if(!on)
 		var/sample
@@ -84,6 +85,7 @@
 			on = 1
 			for(var/obj/effect/adv_shield/S in shields)
 				S.activate()
+				S.active = 1
 			return
 		else
 			on = 0
@@ -126,9 +128,10 @@
 /obj/machinery/space_battle/shield_generator/process()
 	flux_rate = flux*100
 	regen = (flux*flux_rate)
-	var/obj/effect/adv_shield/S = pick(shields)
-	S.regen = regen
-	S.calculate()
+	for(var/obj/effect/adv_shield/S in shields)
+		if(S.active)
+			S.regen = regen
+		//S.calculate()
 //	world << "calculating:"
 //	world << "regen rate[regen]"
 //	world << "maxhealth: [S.maxhealth]"
@@ -153,7 +156,8 @@
 	var/maxhealth = 20000
 	var/in_dir = 2
 	var/list/friendly = list() //friendly phasers that are linked, have this change ON DISMANTLE ok?
-	var/regen = 0 //inherited from generator
+	var/regen = 100 //inherited from generator
+	var/active = 0
 
 /obj/effect/adv_shield/CanAtmosPass(turf/T)
 	if(density)
@@ -171,6 +175,8 @@
 			if(!istype(W))
 				return
 			friendly += W //link a phaser in, these phasers can through shields
+		for(var/obj/structure/photon_torpedo/A in thearea)
+			friendly += A
 //	START_PROCESSING(SSobj, src)
 
 /obj/effect/adv_shield/proc/activate()
@@ -178,36 +184,39 @@
 	density = 1
 	START_PROCESSING(SSobj,src)
 
-/obj/effect/adv_shield/proc/deactivate(num)
+/obj/effect/adv_shield/proc/deactivate()
 	icon_state = "shieldwalloff"
 	density = 0
 	if(src in generator.active_shields)
 		generator.active_shields.Remove(src)
 		generator.inactive_shields.Add(src)
-	if(num == 1) //safely powered down from shieldgen
-		STOP_PROCESSING(SSobj,src)
+//	if(num == 1) //safely powered down from shieldgen
+	//	STOP_PROCESSING(SSobj,src)
 	else
 		return
 
 /obj/effect/adv_shield/proc/calculate()
 	for(var/obj/effect/adv_shield/S in generator.shields)
 		S.health += regen
-		if(S.health > maxhealth)
-			S.health = maxhealth
+	//	if(S.health >= maxhealth)
+		//	S.health = maxhealth
 
 /obj/effect/adv_shield/process()
-	if(!density) //in otherwords, not active
+	if(active && !density) //Active means the shieldgen is turning  it on, if it's not active the shieldgen cut it off
 		if(health <= 1000) //once they go down, they must charge back up a bit
 			health += 50 //slowly recharge
-		else
+		else //problem here
 			activate()
-	if(health < maxhealth)
-		calculate()
-	//	health += regen
-	else
-		return
-	if(health <= 0)
-		health = 0
+	if(active) //we are active
+		if(health < maxhealth)
+			health += regen
+		//	health += regen
+		else
+			return
+		if(health <= 0)
+			health = 0
+			return deactivate()
+	else if(!active)
 		return deactivate()
 //	calculate()
 
@@ -340,7 +349,7 @@
 
 /obj/item/weapon/gun/shipweapon/process_fire(atom/target as mob|obj|turf, atom/source as mob|obj, message = 0, params, zone_override)
 	var/sound = pick(fire_sounds)
-	playsound(src.loc, sound, 200,1)
+	playsound(src.loc,sound, 200,1)
 	if(isliving(source))
 		var/mob/living/L = source
 		add_fingerprint(L)
@@ -482,6 +491,7 @@
 	var/percentage = 0 //percent charged
 	var/list/shipareas = list()
 	var/target = null
+	var/obj/machinery/space_battle/shield_generator/shieldgen
 
 /obj/machinery/power/ship/phaser/opposite
 	dir = 8
@@ -548,6 +558,13 @@
 	phaser = new /obj/item/weapon/gun/shipweapon(src)
 	phaser.mounted = 1
 	find_cores()
+	find_generator()
+
+/obj/machinery/power/ship/phaser/proc/find_generator()
+	var/area/thearea = get_area(src)
+	world << "finding shieldgen"
+	for(var/obj/machinery/space_battle/shield_generator/S in thearea)
+		shieldgen = S
 
 /obj/machinery/power/ship/phaser/proc/find_cores()
 	var/area/thearea = get_area(src)
@@ -555,6 +572,9 @@
 		if(istype(AR, /area/ship)) //change me
 			shipareas += AR.name
 			shipareas[AR.name] = AR
+			if(AR == thearea)
+				shipareas -= AR.name
+				shipareas[AR.name] = null
 	if(shipareas.len)
 		src.say("Target located")
 	else
@@ -574,20 +594,22 @@
 		return 0
 
 /obj/machinery/power/ship/phaser/proc/attempt_fire(atom/target) //TEST remove /atom if no work
+	find_generator()
 	if(can_fire())
+		phaser.LoseTarget()
 		charge -= fire_cost
 		phaser.losetarget()
 		phaser.current_target = target
 		phaser.process_fire(target = target,  source = src)
-		var/obj/item/projectile/bullet/phasepulse/A = PoolOrNew(/obj/item/projectile/bullet/phasepulse,src.loc)
-		world << A
+		var/obj/effect/adv_shield/S = pick(shieldgen.shields)
+		var/obj/item/projectile/bullet/phasepulse/A = PoolOrNew(/obj/item/projectile/bullet/phasepulse,S.loc)
 	//ar/dir = get_dir(get_turf(src), get_turf(target))
 	//.dir = dir
 		A.source = phaser
 		A.target = target
-		A.starting = loc
+		A.starting = S.loc
 		var/targloc = get_turf(target)
-		A.preparePixelProjectile(target,targloc,src)
+		A.preparePixelProjectile(target,targloc,S)
 		A.fire()
 	else
 		src.say("error")
@@ -699,6 +721,8 @@
 	var/obj/machinery/space_battle/shield_generator/shieldgen
 	var/REDALERT = 0
 	var/redalertsound
+	var/area/target_area = null
+	var/list/torpedoes = list()
 
 /obj/structure/fluff/helm/desk/tactical/process()
 	var/area/thearea = get_area(src)
@@ -710,53 +734,62 @@
 /obj/structure/fluff/helm/desk/tactical/New()
 	. = ..()
 	get_weapons()
-	var/area/thearea = get_area(src)
+	get_shieldgen()
+//	var/area/thearea = get_area(src)
 	for(var/area/AR in world)
 		if(istype(AR, /area/ship)) //change me
 			shipareas += AR.name
 			shipareas[AR.name] = AR
+
+/obj/structure/fluff/helm/desk/tactical/proc/get_shieldgen()
+	var/area/thearea = get_area(src)
 	for(var/obj/machinery/space_battle/shield_generator/S in thearea)
 		shieldgen = S
 		S.controller = src
+		return 1
+	return 0
+
 
 /obj/structure/fluff/helm/desk/tactical/proc/get_weapons()
 	weapons = list()
+	torpedoes = list()
 	var/area/thearea = get_area(src)
 	for(var/obj/machinery/power/ship/phaser/P in thearea)
 		if(P.z == src.z)
 			weapons += P
+	for(var/obj/structure/torpedo_launcher/T in thearea)
+		if(T.z == src.z)
+			torpedoes += T
 
 
 /obj/structure/fluff/helm/desk/tactical/attack_hand(mob/user)
 	get_weapons()
+	get_shieldgen()
+	var/area/current = get_area(src)
 	for(var/area/AR in world)
 		if(istype(AR, /area/ship)) //change me
 			if(!AR in shipareas)
 				shipareas += AR.name
 				shipareas[AR.name] = AR
-	var/mode = input("Tactical console.", "Do what?")in list("choose target", "fire phasers", "shield control", "red alert siren")
+				if(AR == current)
+					shipareas -= AR.name
+					shipareas -= AR
+	var/mode = input("Tactical console.", "Do what?")in list("choose target", "fire phasers", "shield control", "red alert siren","fire torpedo")
 	switch(mode)
 		if("choose target")
 			var/A
 			A = input("Area to fire on", "Tactical Control", A) as anything in shipareas
-			var/area/thearea = shipareas[A]
-			var/list/L = list()
-			for(var/turf/T in get_area_turfs(thearea.type))
-				L+=T
-			var/location = pick(L)
-			target = location
+			target_area = shipareas[A]
+			new_target()
 			for(var/obj/machinery/power/ship/phaser/P in weapons)
-				P.target = location
+				P.target = target
+			for(var/obj/structure/torpedo_launcher/T in torpedoes)
+				T.target = target
 		if("fire phasers")
 			playsound(src.loc, 'sound/borg/machines/bleep1.ogg', 100,1)
-			var/area/thearea = get_area(target)
-			var/list/L = list()
-			for(var/turf/T in get_area_turfs(thearea.type))
-				L+=T
-			var/location = pick(L)
-			target = location
+			new_target()
 			for(var/obj/machinery/power/ship/phaser/P in weapons)
-				P.target = location
+				P.target = target
 			if(target != null)
 				for(var/obj/machinery/power/ship/phaser/P in weapons)
 					P.attempt_fire(target)
@@ -774,6 +807,148 @@
 				src.say("RED ALERT ACTIVATED")
 				REDALERT = 1
 				START_PROCESSING(SSobj,src)
+		if("fire torpedo")
+			new_target()
+			for(var/obj/structure/torpedo_launcher/T in torpedoes)
+				src.say("firing torpedoes at [target_area.name]")
+				T.target = target
+				T.fire()
+				playsound(src.loc, 'sound/borg/machines/bleep2.ogg', 100,1)
+
+
+
+/obj/structure/fluff/helm/desk/tactical/proc/new_target()
+	var/list/L = list()
+	for(var/turf/T in get_area_turfs(target_area.type))
+		L+=T
+	var/location = pick(L)
+	target = location
+
+/obj/structure/photon_torpedo
+	name = "photon torpedo"
+	desc = "A casing for a powerful explosive, I wouldn't touch it if I were you..."
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "torpedo"
+	anchored = FALSE
+	density = 1 //SKREE
+	opacity = 0
+	layer = 4.5
+	var/armed = 0
+	var/damage = 400 //Quite damaging, but not really for battering shields
+	//var/obj/structure/torpedo_launcher/launcher
+
+/obj/structure/photon_torpedo/Bump(atom/movable/AM)
+	if(armed)
+		if(istype(AM, /obj/effect/adv_shield))
+			var/obj/effect/adv_shield/S = AM
+			S.take_damage(damage)
+			var/area/thearea = get_area(S)
+			qdel(src)
+			for(var/mob/M in thearea)
+				shake_camera(M, 20, 1)
+		else
+			explosion(src.loc,2,5,20,8)
+			var/area/thearea = get_area(AM)
+			for(var/mob/M in thearea)
+				shake_camera(M, 30, 2)
+	else
+		. = ..()
+
+//this code bumped into the shield and carried on bumping them until they died, may be cool as a bunker buster torpedo
+/*
+/obj/structure/photon_torpedo/Bump(atom/movable/AM)
+	if(armed)
+		if(istype(AM, /obj/effect/adv_shield))
+			var/obj/effect/adv_shield/S = AM
+			S.take_damage(damage)
+			var/area/thearea = get_area(S)
+			for(var/mob/M in thearea)
+				shake_camera(M, 20, 1)
+		else
+			explosion(src.loc,2,5,20,8)
+			var/area/thearea = get_area(AM)
+			for(var/mob/M in thearea)
+				shake_camera(M, 30, 3)
+	else
+		. = ..()
+*/
+
+obj/structure/torpedo_launcher
+	name = "torpedo launcher"
+	desc = "launch the clown at high velocity"
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "torpedolauncher"
+	var/list/loaded = list()
+	var/list/sounds = list('sound/borg/machines/torpedo1.ogg','sound/borg/machines/torpedo2.ogg')
+	var/obj/machinery/space_battle/shield_generator/shieldgen
+	var/atom/target = null
+	density = 1
+	anchored = 1
+
+obj/structure/torpedo_launcher/Bumped(atom/movable/AM)
+	loaded += AM
+	AM.loc = src
+	src.say("[AM] has been loaded into the tube")
+	icon_state = "torpedolauncher-fire"
+
+obj/structure/torpedo_launcher/New()
+	find_generator()
+
+obj/structure/torpedo_launcher/attack_hand(mob/user)
+	icon_state = "torpedolauncher"
+	user << "you start unloading [src]"
+	if(do_after(user, 50, target = src))
+		icon_state = "torpedolauncher-fire"
+		for(var/atom/movable/I in loaded)
+			var/turf/theturf = get_turf(user)
+			I.forceMove(theturf)
+			loaded -= I
+			if(istype(I, /obj/structure/photon_torpedo))
+				var/obj/structure/photon_torpedo/T = I
+				T.armed = 0
+				T.icon_state = "torpedo"
+
+
+obj/structure/torpedo_launcher/proc/find_generator()
+	var/area/thearea = get_area(src)
+	for(var/obj/machinery/space_battle/shield_generator/S in thearea)
+		shieldgen = S
+
+obj/structure/torpedo_launcher/proc/fire()
+	icon_state = "torpedolauncher"
+	var/sound = pick(sounds)
+	find_generator()
+	playsound(src.loc, sound, 300,1)
+	for(var/atom/movable/A in loaded)
+		var/obj/effect/adv_shield/S = pick(shieldgen.shields) //new shield each time, prevent spam
+		A.forceMove(get_turf(S))
+		if(istype(A,/mob/living/))
+			var/mob/living/M = A
+			M.Weaken(5)
+		if(istype(A, /obj/structure/photon_torpedo))
+			var/obj/structure/photon_torpedo/T = A
+			T.armed = 1
+			T.icon_state = "torpedo_armed"
+		var/atom/throw_at = get_turf(target)
+		A.throw_at_fast(throw_at, 500, 1)
+		loaded = list()
+	if(!loaded.len)
+		src.say("Nothing is loaded")
+
+
+/obj/machinery/shieldgen/wallmounted
+		name = "structural integrity field generator"
+		desc = "Can be activated to seal off hull breaches, don't expect the emergency fields it creates to last long though...."
+		icon = 'icons/obj/machines/borg_decor.dmi'
+		icon_state = "shieldoff"
+		density = 1
+		opacity = 0
+		anchored = 1
+		can_be_unanchored = 0
+		shield_range = 10
+
+
+/obj/machinery/shieldgen/wallmounted/process
 
 //Par made some sick bridge sprites, nut on them and think of Par not me whilst you do
 
@@ -949,4 +1124,6 @@
 	desc = "it makes you feel like you're on a starship"
 	icon = 'icons/obj/machines/borg_decor.dmi'
 	icon_state = "lightrightup"
+
+
 
