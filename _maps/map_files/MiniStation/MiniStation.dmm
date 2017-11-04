@@ -9101,7 +9101,7 @@
 	},
 /area/medical/medbay)
 "sF" = (
-/obj/machinery/telecomms/receiver/preset_left/ministation,
+/obj/machinery/telecomms/receiver/preset_left,
 /turf/open/floor/bluegrid{
 	icon_state = "dark";
 	name = "Mainframe Floor";
@@ -14540,7 +14540,7 @@
 	},
 /area/tcommsat/computer)
 "EW" = (
-/obj/machinery/telecomms/server/presets/common/ministation,
+/obj/machinery/telecomms/server/presets/common,
 /turf/open/floor/bluegrid{
 	icon_state = "dark";
 	name = "Mainframe Floor";
@@ -15395,7 +15395,7 @@
 	},
 /area/tcommsat/computer)
 "GQ" = (
-/obj/machinery/telecomms/broadcaster/preset_left/ministation,
+/obj/machinery/telecomms/broadcaster/preset_left,
 /turf/open/floor/bluegrid{
 	icon_state = "dark";
 	name = "Mainframe Floor";
