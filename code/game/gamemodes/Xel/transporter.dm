@@ -73,8 +73,8 @@
                                 //        user << "Transport pattern buffer initialization failure."
 		if("receieve away team member")
 			var/C = input(user, "Beam someone back", "Transporter Control") as anything in retrievable
-			if(!C in retrievable)
-				return
+		//	if(!C in retrievable)
+		//		return
 			var/atom/movable/target = C
 			playsound(src.loc, 'sound/borg/machines/transporter.ogg', 40, 4)
 			retrievable -= target

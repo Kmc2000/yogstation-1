@@ -121,7 +121,7 @@
 	//	S.density = 0
 		//S.icon_state = "shieldwalloff"
 	else
-		S.health -= damage
+		S.take_damage(damage)
 	return 1
 
 
@@ -313,7 +313,6 @@
 	icon_state = "chronogun"
 	item_state = "chronogun"
 	w_class = 3.0
-
 	var/atom/current_target
 	var/last_check = 0
 	var/check_delay = 10 //Check los as often as possible, max resolution is SSobj tick though
@@ -357,7 +356,7 @@
 		LoseTarget()
 	current_target = target
 	active = 1
-	current_beam = new(source,current_target,time=6000,beam_icon_state="phaserbeam",maxdistance=5000,btype=/obj/effect/ebeam/phaser)
+	current_beam = new(source,current_target,time=30,beam_icon_state="phaserbeam",maxdistance=5000,btype=/obj/effect/ebeam/phaser)
 	spawn(0)
 		current_beam.Start()
 
@@ -427,6 +426,8 @@
 					qdel(dummy)
 					return 0
 		if(turf.density)
+			var/turf/theturf = get_turf(turf)
+			explosion(theturf,2,5,11)
 			qdel(dummy)
 			return 0
 		for(var/obj/effect/ebeam/phaser/B in turf)// Don't cross the str-beams!
@@ -786,15 +787,7 @@
 			for(var/obj/structure/torpedo_launcher/T in torpedoes)
 				T.target = target
 		if("fire phasers")
-			playsound(src.loc, 'sound/borg/machines/bleep1.ogg', 100,1)
-			new_target()
-			for(var/obj/machinery/power/ship/phaser/P in weapons)
-				P.target = target
-			if(target != null)
-				for(var/obj/machinery/power/ship/phaser/P in weapons)
-					P.attempt_fire(target)
-			else
-				user << "ERROR, no target selected"
+			fire_phasers(target, user)
 		if("shield control")
 			shieldgen.toggle(user)
 		if("red alert siren")
@@ -808,12 +801,26 @@
 				REDALERT = 1
 				START_PROCESSING(SSobj,src)
 		if("fire torpedo")
-			new_target()
-			for(var/obj/structure/torpedo_launcher/T in torpedoes)
-				src.say("firing torpedoes at [target_area.name]")
-				T.target = target
-				T.fire()
-				playsound(src.loc, 'sound/borg/machines/bleep2.ogg', 100,1)
+			fire_torpedo(target,user)
+
+
+/obj/structure/fluff/helm/desk/tactical/proc/fire_phasers(atom/target, mob/user)
+	playsound(src.loc, 'sound/borg/machines/bleep1.ogg', 100,1)
+	for(var/obj/machinery/power/ship/phaser/P in weapons)
+		P.target = target
+	if(target != null)
+		for(var/obj/machinery/power/ship/phaser/P in weapons)
+			P.attempt_fire(target)
+	else
+		user << "ERROR, no target selected"
+
+/obj/structure/fluff/helm/desk/tactical/proc/fire_torpedo(atom/target,mob/user)
+	new_target()
+	for(var/obj/structure/torpedo_launcher/T in torpedoes)
+		src.say("firing torpedoes at [target_area.name]")
+		T.target = target
+		T.fire()
+		playsound(src.loc, 'sound/borg/machines/bleep2.ogg', 100,1)
 
 
 
@@ -1127,3 +1134,210 @@ obj/structure/torpedo_launcher/proc/fire()
 
 
 
+//Movement system and upgraded ship combat!
+
+///////
+///Remember to paste into ship.dm
+///////
+
+#define TORPEDO_MODE 1
+
+/obj/structure/overmap
+	name = "generic structure"
+	var/linked_ship = /area/ship //change me
+	var/datum/beam/current_beam = null //stations will be able to fire back, too!
+	var/health = 20000 //pending balance, 20k for now
+	var/obj/machinery/space_battle/shield_generator/generator
+	var/obj/structure/fluff/helm/desk/tactical/weapons
+	var/shield_health = 1050 //How much health do the shields have left, for UI type stuff and icon_states
+	var/mob/living/carbon/human/pilot
+	var/view_range = 7 //change the view range for looking at a long range.
+	anchored = 0
+	can_be_unanchored = 0 //Don't anchor a ship with a wrench, these are going to be people sized
+	density = 1
+	var/list/interactables_near_ship = list()
+	linked_ship = /area/ship //CHANGE ME WITH THE DIFFERENT TYPES!
+	var/max_shield_health = 20000 //default max shield health, changes on process
+	var/shields_active = 0
+	pixel_y = -32
+	var/next_vehicle_move = 0 //used for move delays
+	var/vehicle_move_delay = 4 //tick delay between movements, lower = faster, higher = slower
+	var/mode = 0 //add in two modes ty
+	var/damage = 600 //standard damage for phasers, this will tank shields really quickly though so be warned!
+
+
+/obj/structure/overmap/away/station
+	name = "space station 13"
+	var/list/areaslist = list() //teleport to the station with this one, override this with custom areas to allow the transporter to beam people down!
+
+/obj/structure/overmap/away/station/New()
+	. = ..()
+	for(var/area/thearea in teleportlocs)
+		if(!thearea in areaslist)
+			areaslist += thearea
+
+
+/obj/structure/overmap/ship
+	name = "a space ship"
+	icon = 'icons/obj/machines/overmap_ships.dmi'
+	icon_state = "generic"
+
+
+/obj/structure/overmap/ship/target //dummy for testing woo
+	name = "Ohno"
+	linked_ship = /area/ship/target
+
+//So basically we're going to have ships that fly around in a box and shoot each other, i'll probably have the pilot mob possess the objects to fly them or something like that, otherwise I'll use cameras.
+
+/obj/structure/overmap/ship/relaymove(mob/user,direction)
+	if(user.incapacitated())
+		return //add things here!
+	if(!Process_Spacemove(direction) || world.time < next_vehicle_move || !isturf(loc))
+		return
+	step(src, direction)
+	next_vehicle_move = world.time + vehicle_move_delay
+	//use_power
+
+//obj/structure/overmap/ship/Move(atom/newloc, direct)
+//	. = ..()
+//	if(.)
+	//	events.fireEvent("onMove",get_turf(src))
+
+/obj/structure/overmap/ship/Process_Spacemove(movement_dir = 0)
+	return 1 //add engines later
+
+/obj/structure/overmap/ship/attack_hand(mob/user)
+	user << "you climb into [src]...somehow" //change me!
+	user.loc = src
+	pilot = user
+
+/obj/structure/overmap/ship/New()
+	. = ..()
+	START_PROCESSING(SSobj,src)
+	linkto(num = 2)
+	for(var/obj/effect/landmark/A in landmarks_list)
+		if(A.name == "ship_spawn" || A.identifier == "ship")
+			forceMove(A.loc)
+
+//obj/structure/overmap/ship/GrantActions(mob/living/user, human_occupant = 0)
+//	internals_action.Grant(user, src)
+//	var/datum/action/innate/mecha/strafe/strafing_action = new
+
+/obj/structure/overmap/proc/linkto(num)
+	if(num == 1)
+		var/area/thearea = get_area(linked_ship)
+		for(var/obj/structure/fluff/helm/desk/tactical/T in linked_ship)
+			weapons = T
+		for(var/obj/machinery/space_battle/shield_generator/G in linked_ship)
+			generator = G
+	else
+		var/area/thearea = get_area(src)
+		for(var/obj/structure/fluff/helm/desk/tactical/T in thearea)
+			weapons = T
+		for(var/obj/machinery/space_battle/shield_generator/G in thearea)
+			generator = G
+//		world << "[weapons], [generator]"
+
+/obj/structure/overmap/proc/take_damage(amount)
+	if(has_shields())
+		generator.take_damage(amount)//shields now handle the hit
+	else//no shields are up! take the hit
+		var/datum/effect_system/spark_spread/s = new
+		s.set_up(2, 1, src)
+		s.start() //make a better overlay effect or something, this is for testing
+		health -= amount
+		playsound(src.loc, 'sound/borg/machines/shiphit.ogg',100,0) //clang
+
+/obj/structure/overmap/process()
+	var/obj/effect/adv_shield/theshield = pick(generator.shields) //sample a random shield for health and stats.
+	shield_health = theshield.health
+	max_shield_health = theshield.maxhealth
+	if(!theshield.density)
+		shields_active = 0
+	else
+		shields_active = 1
+	if(health <= 0)
+		destroy(1)
+	if(location())
+		pilot << "New visitable object near you"
+
+/obj/structure/overmap/proc/destroy(severity)
+	STOP_PROCESSING(SSobj,src)
+	switch(severity)
+		if(1)
+			//Here we will blow up the ship map as well, 0 is if you dont want to lag the server.
+			qdel(src)
+			//make explosion in ship
+		if(0)
+			qdel(src)
+
+/obj/structure/overmap/proc/has_shields()
+	if(shield_health > 1000 && shields_active)
+		return 1
+	else//no
+		return 0
+
+/obj/structure/overmap/bullet_act(var/obj/item/projectile/P)
+	. = ..()
+	take_damage(P.damage)
+
+/obj/structure/overmap/proc/location() //OK we're using areas for this so that we can have the ship be within an N tile range of an object
+	var/area/thearea = get_area(src)
+	for(var/obj/structure/overmap/away/A in thearea)
+		if(!istype(A))
+			return
+		interactables_near_ship += A
+	if(interactables_near_ship.len > 0)
+		return 1
+	else//nope
+		return 0
+
+/obj/structure/overmap/ship/starfleet
+	name = "USS Cadaver"
+	icon_state = "cadaver"
+//obj/structure/fluff/ship/helm do me later
+
+/obj/structure/overmap/proc/click_action(atom/target,mob/user,params)
+//add in TORPEDO MODE and PHASER MODE TO A MODE SELECT UI THING
+	if(!pilot || pilot != user )
+		return
+	if(user.incapacitated())
+		return
+//	if(!get_charge())
+//		return
+	if(src == target)
+		return
+	if(istype(target, /obj/structure/overmap))
+		switch(mode)
+			if(TORPEDO_MODE)
+				fire_torpedo(target,user)
+			else
+				fire(target,user)
+	else
+		user << "Unable to lock phasers, this weapon mode only targets large objects"
+		return
+
+
+/obj/structure/overmap/proc/fire(atom/target,mob/user)
+	var/source = get_turf(src)
+	var/obj/structure/overmap/S = target
+	current_beam = new(source, target,time=30,beam_icon_state="phaserbeam",maxdistance=5000,btype=/obj/effect/ebeam/phaser)
+	var/list/L = list()
+	var/area/thearea
+	for(var/area/A in weapons.shipareas)
+		if(istype(A, S.linked_ship))
+			thearea = A
+	for(var/turf/T in get_area_turfs(thearea.type))
+		L+=T
+	var/location = pick(L)
+	weapons.target = location
+	weapons.fire_phasers(target,user)
+	S.take_damage(damage)
+	spawn(0)
+		current_beam.Start()
+
+
+/obj/structure/overmap/proc/fire_torpedo(atom/target,mob/user)
+	var/obj/structure/overmap/S = target
+	weapons.target = S.linked_ship
+	weapons.fire_phasers(target,user)

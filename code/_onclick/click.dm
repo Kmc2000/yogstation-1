@@ -99,6 +99,10 @@
 		var/obj/mecha/M = loc
 		return M.click_action(A,src,params)
 
+	if(istype(loc,/obj/structure/overmap/ship))
+		var/obj/structure/overmap/ship/S = loc
+		return S.click_action(A,src,params)
+
 	if(restrained())
 		changeNext_move(CLICK_CD_HANDCUFFED)   //Doing shit in cuffs shall be vey slow
 		RestrainedClickOn(A)
