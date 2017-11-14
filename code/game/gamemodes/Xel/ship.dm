@@ -563,7 +563,6 @@
 
 /obj/machinery/power/ship/phaser/proc/find_generator()
 	var/area/thearea = get_area(src)
-	world << "finding shieldgen"
 	for(var/obj/machinery/space_battle/shield_generator/S in thearea)
 		shieldgen = S
 
@@ -1144,7 +1143,7 @@ obj/structure/torpedo_launcher/proc/fire()
 
 /obj/structure/overmap
 	name = "generic structure"
-	var/linked_ship = /area/ship //change me
+//	var/linked_ship = /area/ship //change me
 	var/datum/beam/current_beam = null //stations will be able to fire back, too!
 	var/health = 20000 //pending balance, 20k for now
 	var/obj/machinery/space_battle/shield_generator/generator
@@ -1156,7 +1155,7 @@ obj/structure/torpedo_launcher/proc/fire()
 	can_be_unanchored = 0 //Don't anchor a ship with a wrench, these are going to be people sized
 	density = 1
 	var/list/interactables_near_ship = list()
-	linked_ship = /area/ship //CHANGE ME WITH THE DIFFERENT TYPES!
+	var/area/linked_ship = /area/ship //CHANGE ME WITH THE DIFFERENT TYPES!
 	var/max_shield_health = 20000 //default max shield health, changes on process
 	var/shields_active = 0
 	pixel_y = -32
@@ -1341,3 +1340,92 @@ obj/structure/torpedo_launcher/proc/fire()
 	var/obj/structure/overmap/S = target
 	weapons.target = S.linked_ship
 	weapons.fire_phasers(target,user)
+
+
+#undef TORPEDO_MODE
+
+
+#define CHEST 1
+
+#define BACK 2
+
+#define POCKETS 3
+
+#define EARS 4
+
+#define BELT 5
+
+#define HANDS 6
+
+#define ID 7
+
+#define HEAD 8
+
+/obj/machinery/bodyscanner
+	name = "full body scanner"
+	desc = "A scanning device which can detect contraband, configure it using a console, link it to a console with a multitool"
+	icon = 'icons/obj/machines/borg_decor.dmi'
+	icon_state = "metaldetector"
+	use_power = 1
+	idle_power_usage = 200
+	layer = 4.5
+	density = 0
+	dir = 4 //default to the sidescanner
+	var/list/scan_for = list(/obj/item/weapon, /obj/item/weapon)
+	var/active = 1
+	var/SIDE_SCANNER = 1 // are we a side facing scanner?
+	var/scanning = 0
+
+/obj/machinery/bodyscanner/Crossed(atom/movable/mover as mob)
+	if(active)
+		src.say("scanning")
+		scan(mover)
+
+/obj/machinery/bodyscanner/proc/scan(mob/living/A)
+	if(istype(A, /mob/living/carbon/human))
+		var/theitem = pick(scan_for)
+		update_icon(A)
+		var/mob/living/carbon/human/L = A
+		for(var/obj/I in L.contents)
+			if(istype(I, theitem))
+				if(I in L.back.contents)
+					update_icon(L,BACK)
+				if(I in L.ears)
+					update_icon(L,HEAD)
+				if(I in L.l_store || L.r_store)
+					update_icon(L,POCKETS)
+				if(I in L.l_hand || L.r_hand)
+					update_icon(L,HANDS)
+				if(I in L.head || L.wear_mask)
+					update_icon(L,HEAD)
+				if(I in L.belt.contents || L.belt)
+					update_icon(L,POCKETS)
+				if(I in L.wear_id)
+					update_icon(L,POCKETS)
+				src.say("AAA")
+				return 1
+	if(istype(A, /mob/living/carbon/monkey))
+		return
+	if(istype(A, /mob/living/silicon))
+		return
+
+/obj/machinery/bodyscanner/update_icon(mob/living/L,zone)
+	overlays.Cut()
+	switch(zone)
+		if(CHEST)//Chest
+			overlays += image('icons/obj/machines/borg_decor.dmi', "zone_chest", dir = L.dir)
+#undef CHEST
+
+#undef BACK
+
+#undef POCKETS
+
+#undef EARS
+
+#undef BELT
+
+#undef HANDS
+
+#undef ID
+
+#undef HEAD

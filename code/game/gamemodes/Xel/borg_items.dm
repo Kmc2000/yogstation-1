@@ -808,7 +808,7 @@
 	desc = "make it so."
 	circuit = /obj/item/weapon/circuitboard/computer/white_ship
 	shuttleId = "trekshuttle"
-	possible_destinations = "trek_custom_shuttle,trekshuttlehome"
+	possible_destinations = "trek_custom_shuttle"
 	icon = 'icons/obj/machines/borg_decor.dmi'
 	icon_state = "helm"
 	anchored = TRUE
@@ -827,7 +827,7 @@
 	shuttleId = "trekshuttle"
 	shuttlePortId = "trek_custom_shuttle"
 	shuttlePortName = "shuttle warp beacon"
-	jumpto_ports = list("trekshipaway", "syndicate_ne", "syndicate_nw", "trek_custom", "syndicate_se", "syndicate_sw", "syndicate_s","whiteship_z4","whiteship_away","mining_away","trekshuttlehome")
+	jumpto_ports = list("trekshuttlehome", "syndicate_ne", "syndicate_nw", "trek_custom", "syndicate_se", "syndicate_sw", "syndicate_s","whiteship_z4","whiteship_away","mining_away")
 	x_offset = 0
 	y_offset = 3
 	rotate_action = null
@@ -967,6 +967,7 @@
 	var/obj/item/device/analyzer/gasscan //attackself
 	var/obj/item/device/detective_scanner/detscan //attackself to print, afterattack to scan
 	var/medical = 0
+	var/obj/machinery/computer/transporter_control/transporter_controller
 
 /obj/item/weapon/tricordscanner/New()
 	. = ..()
@@ -984,7 +985,7 @@
 		return I.attackby(src, user)
 	if(tricorder_science_mode(I, user))
 		var/B
-		B = input(user, "Select mode:","Tricorder scanner",B) in list("t ray scanner","mining scanner","gas analyzer","detective scanner", "cancel")
+		B = input(user, "Select mode:","Tricorder scanner",B) in list("t ray scanner","mining scanner","gas analyzer","detective scanner","transporter tag", "cancel")
 		switch(B)
 			if("t ray scanner")
 				rayscan.attack_self(user)
@@ -996,6 +997,12 @@
 				detscan.scan(I, user)
 				sleep(40)
 				detscan.attack_self(user)
+			if("transporter tag")
+				if(!I in transporter_controller.retrieveable)
+					user << "[I] has been tagged for transportation and can now be beamed up"
+					transporter_controller.retrieveable += I
+				else
+					user << "[I] has already been tagged for transportation."
 			if("cancel")
 				return
 	else if(medical)
@@ -1034,7 +1041,7 @@
 
 /obj/item/device/tricorder
 	name = "tricorder"
-	desc = "Utilized in the fields of repairwork, analyzing, and containing a variety of useful information."
+	desc = "Utilized in the fields of repairwork, analyzing, and containing a variety of useful information. Set it to science mode to access scanning capabilities"
 	icon = 'icons/obj/machines/borg_decor.dmi'
 	icon_state = "tricorder"
 	slot_flags = SLOT_BELT
@@ -1044,6 +1051,7 @@
 	var/setting = MEDICAL_MODE
 	var/scannerstatus = HAS_SCANNER
 	var/obj/item/weapon/tricordscanner/tscanner
+	var/obj/machinery/computer/transporter_control/transporter_controller
 
 /obj/item/device/tricorder/New()
 	..()
@@ -1108,6 +1116,7 @@
 	..()
 
 /obj/item/device/tricorder/proc/remove_scanner(mob/user) // remove scanner
+	tscanner.transporter_controller = transporter_controller
 	if(loc == user) //you already sorta defined that, but redundancy doesnt hurt
 		if(open == CLOSED)
 			return

@@ -7,8 +7,9 @@
 	icon_keyboard = null
 	icon_screen = null
 	layer = 4.5
-	var/list/retrievable = list()
+	var/list/retrieveable = list()
 	var/list/linked = list()
+	var/list/tricorders = list()
 
 /obj/machinery/computer/transporter_control/New()
 	. = ..()
@@ -68,16 +69,17 @@
 		//		usr << "No area available."
 			else
 				activate_pads(L)
+
                         //                T.icon_state = "transporter" //erroroneus meme!
                                 //        playsound(src.loc, 'sound/borg/machines/alert2.ogg', 40, 4)
                                 //        user << "Transport pattern buffer initialization failure."
 		if("receieve away team member")
-			var/C = input(user, "Beam someone back", "Transporter Control") as anything in retrievable
+			var/C = input(user, "Beam someone back", "Transporter Control") as anything in retrieveable
 		//	if(!C in retrievable)
 		//		return
 			var/atom/movable/target = C
 			playsound(src.loc, 'sound/borg/machines/transporter.ogg', 40, 4)
-			retrievable -= target
+			retrieveable -= target
 			for(var/obj/structure/trek/transporter/T in linked)
 				anim(target.loc,target,'icons/obj/machines/borg_decor.dmi',"transportout")
 				playsound(target.loc, 'sound/borg/machines/transporter2.ogg', 40, 4)
@@ -92,8 +94,17 @@
 		if("cancel")
 			return
 
-/obj/machinery/computer/transporter_control/attackby()
-	return 0
+/obj/machinery/computer/transporter_control/attackby(obj/I, mob/user)
+	if(istype(I, /obj/item/device/tricorder))
+		if(!I in tricorders)
+			var/obj/item/device/tricorder/S = I
+			S.transporter_controller = src
+			tricorders += I
+			user << "Successfully linked [I] to [src], you may now tag items for transportation"
+		else
+			user << "[I] is already linked to [src]!"
+	else
+		return 0
 
 
 /obj/structure/trek/transporter
@@ -109,8 +120,8 @@
 /obj/structure/trek/transporter/proc/teleport(var/atom/movable/M, available_turfs)
 	anim(M.loc,M,'icons/obj/machines/borg_decor.dmi',"transportout")
 	M.dir = 1
-	if(!src in transporter_controller.retrievable)
-		transporter_controller.retrievable += M
+	if(!M in transporter_controller.retrieveable)
+		transporter_controller.retrieveable += M
 	M.alpha = 0
 	M.forceMove(pick(available_turfs))
 //	animate(M)
