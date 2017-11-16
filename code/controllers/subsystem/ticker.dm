@@ -65,17 +65,12 @@ var/datum/subsystem/ticker/ticker
 /datum/subsystem/ticker/New()
 	NEW_SS_GLOBAL(ticker)
 
-	login_music = pick(list('sound/ambience/title2.ogg',
-				'sound/ambience/title1.ogg',
-				'sound/ambience/title3.ogg',
-				'sound/ambience/title-clown.ogg',
-				'sound/ambience/title-getlucky.ogg',
-				'sound/ambience/title-halflife.ogg',
-				'sound/ambience/title-lanius.ogg',
-				'sound/ambience/title-mars.ogg',
-				'sound/ambience/title-musique.ogg',
-				'sound/ambience/title-plasmaattack.ogg',
-				'sound/ambience/title-mrbluesky.ogg'))
+	login_music = pick(list('sound/borg/trek/title-faith.ogg',
+				'sound/borg/trek/title-tos.ogg',
+				'sound/borg/trek/title-ds9.ogg',
+				'sound/borg/trek/title-reboot.ogg',
+				'sound/borg/trek/title-meme.ogg',
+				'sound/borg/trek/title-tng.ogg'))
 
 	if(SSevent.holidays && SSevent.holidays[APRIL_FOOLS])
 		login_music = 'sound/ambience/clown.ogg'

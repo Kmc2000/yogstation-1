@@ -120,8 +120,9 @@
 /obj/structure/trek/transporter/proc/teleport(var/atom/movable/M, available_turfs)
 	anim(M.loc,M,'icons/obj/machines/borg_decor.dmi',"transportout")
 	M.dir = 1
-	if(!M in transporter_controller.retrieveable)
-		transporter_controller.retrieveable += M
+	transporter_controller.retrieveable += M
+	if(M in transporter_controller.retrieveable)
+		transporter_controller.retrieveable -= M
 	M.alpha = 0
 	M.forceMove(pick(available_turfs))
 //	animate(M)

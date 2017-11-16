@@ -33,10 +33,10 @@
 	var/heat = 0
 	var/regen = 0
 /obj/machinery/machinemachine/attack_hand()
-//	world << "regen rate[regen]"
-//	world << "maxhealth: [maxhealth]"
-//	world << "health: [health]"
-//	world << "heat: [heat]"
+//	to_chat(world, "regen rate[regen]")
+//	to_chat(world, "maxhealth: [maxhealth]")
+//	to_chat(world, "health: [health]")
+//	to_chat(world, "heat: [heat]")
 	calculate()
 
 /obj/machinery/machinemachine/proc/calculate()
@@ -44,19 +44,19 @@
 	regen = (flux*flux_rate)
 	//heat += 50
 	health += regen
-//	world << "calculating:"
-//	world << "regen rate[regen]"
-//	world << "maxhealth: [maxhealth]"
-//	world << "health: [health]"
-//	world << "heat: [heat]"
+//	to_chat(world, "calculating:")
+//	to_chat(world, "regen rate[regen]")
+//	to_chat(world, "maxhealth: [maxhealth]")
+//	to_chat(world, "health: [health]")
+//	to_chat(world, "heat: [heat]")
 	if(health >= maxhealth)
 		regen += (flux*flux_rate)
 /obj/machinery/machinemachine/AltClick()
-	world << "damage! heat at:[heat]"
+	to_chat(world, "damage! heat at:[heat]")
 	health -= 500
 
 /obj/machinery/machinemachine/CtrlClick()
-	world << "reset!"
+	to_chat(world, "reset!")
 	health = 1050 //charge them up
 	maxhealth = 20000
 	flux_rate = 50
@@ -70,7 +70,7 @@
 
 /obj/machinery/space_battle/shield_generator/proc/toggle(mob/user)
 	if(on)
-		user << "shields dropped"
+		to_chat(user, "shields dropped")
 		on = 0 //turn off
 		for(var/obj/effect/adv_shield/S in shields)
 			S.deactivate()
@@ -81,7 +81,7 @@
 		for(var/obj/effect/adv_shield/S in shields)
 			sample = S.health
 		if(sample > 1000)
-			user << "shields activated"
+			to_chat(user, "shields activated")
 			on = 1
 			for(var/obj/effect/adv_shield/S in shields)
 				S.activate()
@@ -89,7 +89,7 @@
 			return
 		else
 			on = 0
-			user << "error, shields regenerating after an attack"
+			to_chat(user, "error, shields regenerating after an attack")
 			return
 
 /obj/machinery/space_battle/shield_generator/New()
@@ -132,11 +132,11 @@
 		if(S.active)
 			S.regen = regen
 		//S.calculate()
-//	world << "calculating:"
-//	world << "regen rate[regen]"
-//	world << "maxhealth: [S.maxhealth]"
-//	world << "health: [S.health]"
-	//world << "________________"
+//	to_chat(world, "calculating:")
+//	to_chat(world, "regen rate[regen]")
+//	to_chat(world, "maxhealth: [S.maxhealth]")
+//	to_chat(world, "health: [S.health]")
+	//to_chat(world, "________________")
 
 
 /obj/effect/landmark/shield
@@ -336,7 +336,7 @@
 
 
 /obj/item/weapon/gun/shipweapon/attack_self(mob/user)
-	user <<"<span class='notice'>You disable the beam.</span>"
+	to_chat(user,"<span class='notice'>You disable the beam.</span>")
 	LoseTarget()
 
 /obj/item/weapon/gun/shipweapon/proc/LoseTarget()
@@ -380,7 +380,7 @@
 	if(get_dist(source, current_target)>max_range || !los_check(source, current_target))
 		LoseTarget()
 		if(ishuman(source))
-			source << "<span class='warning'>You lose control of the beam!</span>"
+			to_chat(source, "<span class='warning'>You lose control of the beam!</span>")
 		return
 	if(current_target)
 		on_beam_tick(current_target)
@@ -445,7 +445,7 @@
 /obj/item/weapon/gun/shipweapon/proc/on_beam_tick(var/atom/target)
 	//PoolOrNew(/obj/effect/overlay/temp/heal, list(get_turf(target), "#80F5FF"))
 //	if(istype(target, /obj/effect/adv_shield))
-	//	world << "it's a shield lol"
+	//	to_chat(world, "it's a shield lol")
 //		var/obj/effect/adv_shield/S = target
 //		S.take_damage(damage)
 	//	return
@@ -499,7 +499,7 @@
 	pixel_x = 64
 
 //obj/machinery/power/ship/phaser/attack_hand(mob/user)
-//	user << "input now"
+//	to_chat(user, "input now")
 //	input_target(user)
 
 /obj/machinery/power/ship/phaser/proc/input_target(mob/user) //unused now
@@ -527,7 +527,7 @@
 /obj/machinery/power/ship/phaser/examine(mob/user)
 	. = ..()
 	percentage = (charge / max_power) * 100
-	user << "it is [percentage]% full"
+	to_chat(user, "it is [percentage]% full")
 
 /obj/machinery/power/ship/phaser/process()
 	if(!attached)
@@ -729,7 +729,7 @@
 	if(world.time >= saved_time + cooldown2)
 		saved_time = world.time
 		for(var/mob/M in thearea)
-			M << redalertsound
+			to_chat(M, redalertsound)
 
 /obj/structure/fluff/helm/desk/tactical/New()
 	. = ..()
@@ -811,7 +811,7 @@
 		for(var/obj/machinery/power/ship/phaser/P in weapons)
 			P.attempt_fire(target)
 	else
-		user << "ERROR, no target selected"
+		to_chat(user, "ERROR, no target selected")
 
 /obj/structure/fluff/helm/desk/tactical/proc/fire_torpedo(atom/target,mob/user)
 	new_target()
@@ -902,7 +902,7 @@ obj/structure/torpedo_launcher/New()
 
 obj/structure/torpedo_launcher/attack_hand(mob/user)
 	icon_state = "torpedolauncher"
-	user << "you start unloading [src]"
+	to_chat(user, "you start unloading [src]")
 	if(do_after(user, 50, target = src))
 		icon_state = "torpedolauncher-fire"
 		for(var/atom/movable/I in loaded)
@@ -1206,7 +1206,7 @@ obj/structure/torpedo_launcher/proc/fire()
 	return 1 //add engines later
 
 /obj/structure/overmap/ship/attack_hand(mob/user)
-	user << "you climb into [src]...somehow" //change me!
+	to_chat(user, "you climb into [src]...somehow" )
 	user.loc = src
 	pilot = user
 
@@ -1235,7 +1235,7 @@ obj/structure/torpedo_launcher/proc/fire()
 			weapons = T
 		for(var/obj/machinery/space_battle/shield_generator/G in thearea)
 			generator = G
-//		world << "[weapons], [generator]"
+//		to_chat(world, "[weapons], [generator]")
 
 /obj/structure/overmap/proc/take_damage(amount)
 	if(has_shields())
@@ -1258,7 +1258,7 @@ obj/structure/torpedo_launcher/proc/fire()
 	if(health <= 0)
 		destroy(1)
 	if(location())
-		pilot << "New visitable object near you"
+		to_chat(pilot, "New visitable object near you")
 
 /obj/structure/overmap/proc/destroy(severity)
 	STOP_PROCESSING(SSobj,src)
@@ -1313,7 +1313,7 @@ obj/structure/torpedo_launcher/proc/fire()
 			else
 				fire(target,user)
 	else
-		user << "Unable to lock phasers, this weapon mode only targets large objects"
+		to_chat(user, "Unable to lock phasers, this weapon mode only targets large objects")
 		return
 
 
@@ -1322,10 +1322,10 @@ obj/structure/torpedo_launcher/proc/fire()
 	var/obj/structure/overmap/S = target
 	current_beam = new(source, target,time=30,beam_icon_state="phaserbeam",maxdistance=5000,btype=/obj/effect/ebeam/phaser)
 	var/list/L = list()
-	var/area/thearea
-	for(var/area/A in weapons.shipareas)
-		if(istype(A, S.linked_ship))
-			thearea = A
+	var/area/thearea = get_area(S.linked_ship)
+//	for(var/area/A in weapons.shipareas)
+//		if(istype(A, S.linked_ship))
+//			thearea = A
 	for(var/turf/T in get_area_turfs(thearea.type))
 		L+=T
 	var/location = pick(L)
@@ -1402,7 +1402,7 @@ obj/structure/torpedo_launcher/proc/fire()
 					update_icon(L,POCKETS)
 				if(I in L.wear_id)
 					update_icon(L,POCKETS)
-				src.say("AAA")
+					playsound(src.loc, 'sound/borg/machines/alertbuzz.ogg', 100,1)
 				return 1
 	if(istype(A, /mob/living/carbon/monkey))
 		return
@@ -1414,6 +1414,18 @@ obj/structure/torpedo_launcher/proc/fire()
 	switch(zone)
 		if(CHEST)//Chest
 			overlays += image('icons/obj/machines/borg_decor.dmi', "zone_chest", dir = L.dir)
+		if(BACK)//Chest
+			overlays += image('icons/obj/machines/borg_decor.dmi', "zone_back", dir = L.dir)
+		if(POCKETS)//Chest
+			overlays += image('icons/obj/machines/borg_decor.dmi', "zone_pockets", dir = L.dir)
+		if(EARS)//Chest
+			overlays += image('icons/obj/machines/borg_decor.dmi', "zone_ears", dir = L.dir)
+		if(BELT)//Chest
+			overlays += image('icons/obj/machines/borg_decor.dmi', "zone_legs", dir = L.dir)
+		if(ID)//Chest
+			overlays += image('icons/obj/machines/borg_decor.dmi', "zone_pockets", dir = L.dir)
+		if(HEAD)//Chest
+			overlays += image('icons/obj/machines/borg_decor.dmi', "zone_head", dir = L.dir)
 #undef CHEST
 
 #undef BACK

@@ -10,7 +10,7 @@
 	. = ..()
 	if(proximity)
 		if(istype(I, /obj/item/weapon/wrench))
-			user << "<b>You begin to tear down [src] with your [I]</b>"
+			to_chat(user, "<b>You begin to tear down [src] with your [I]</b>")
 			if(do_after(user, 100))
 				playsound(loc, 'sound/items/Ratchet.ogg', 50, 1)
 				qdel(src)
@@ -43,15 +43,12 @@
 	if(!istype(H))
 		return FALSE
 
-
-
-
 /obj/structure/chair/borg/conversion/user_buckle_mob(mob/living/M, mob/user)
 	. = ..()
 	if(check_elegibility(M) && loc == M.loc)
 		playsound(loc, 'sound/effects/strapin.ogg', 50, 1, -1)
-		M << "<span class='warning'>You feel an immense wave of dread wash over you as [user] starts to strap you into [src]</span>"
-		user << "<span class='warning'>We begin to prepare [M] for assimilation into the collective.</span>"
+		to_chat(M, "<span class='warning'>You feel an immense wave of dread wash over you as [user] starts to strap you into [src]</span>")
+		to_chat(user, "<span class='warning'>We begin to prepare [M] for assimilation into the collective.</span>")
 		M << sound('sound/effects/heartbeat.ogg')
 		var/mob/living/carbon/human/H = M
 		if(do_after(user, 100, target = H))
@@ -63,9 +60,9 @@
 			M.do_jitter_animation(50)
 			src.visible_message("<span class='warning'>[M] looks terrified as they lay on [src]</span>")
 			sleep(60)
-			M << "<span class='warning'>You feel several sharp stings as the [src] cuts into you!</span>"
+			to_chat(M, "<span class='warning'>You feel several sharp stings as the [src] cuts into you!</span>")
 			sleep(10)
-			M << "<span class='warning'>OH GOD THE AGONY!</span>"
+			to_chat(M, "<span class='warning'>OH GOD THE AGONY!</span>")
 			playsound(loc, 'sound/borg/machines/convert_table.ogg', 50, 1, -1)
 			src.visible_message("<span class='warning'>[M] screams in agony as the [src] forces grotesque metal parts onto their grey flesh!</span>")
 			playsound(loc, 'sound/effects/megascream.ogg', 50, 1, -1) //https://youtu.be/5QvgLlFyeok?t=1m48s
@@ -86,7 +83,7 @@
 			overlays -= armoverlay
 			overlays -= armoroverlay
 			icon_state = "borg_off"
-			M << "<span class='warning'>We feel different as the straps binding us to the [src] release, our designation is [M.name].</span>"
+			to_chat(M, "<span class='warning'>We feel different as the straps binding us to the [src] release, our designation is [M.name].</span>")
 			restrained = 0
 	else //error meme
 		src.visible_message("<span class='warning'>[M] is not ready to be augmented.</span>")
@@ -147,7 +144,7 @@
 		var/mob/living/carbon/human/H = M
 		if(isborg(H))
 			valid = 1
-			H << "<span class='warning'>We plug into [src] and feel a soothing current wash over us as our wounds are knitted up by our nanobots.</span>"
+			to_chat(H, "<span class='warning'>We plug into [src] and feel a soothing current wash over us as our wounds are knitted up by our nanobots.</span>")
 		else
 			src.visible_message("<span class='warning'>[M] cannot be recharged as they are not Xel.</span>")
 			unbuckle_mob(M)
