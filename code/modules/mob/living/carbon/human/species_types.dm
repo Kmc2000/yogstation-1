@@ -1,4 +1,5 @@
 #define STATUS_MESSAGE_COOLDOWN 900
+#define is_skeksis(D) (D.dna.species.id == "skeksis")
 
 /*
  HUMANS
@@ -19,11 +20,18 @@
 	toxic_food = TOXIC | RAW
 
 
-/datum/species/human/qualifies_for_rank(rank, list/features)
+/datum/species/human/qualifies_for_rank(rank, list/features, mob/living/carbon/human/H)
 	if((!features["tail_human"] || features["tail_human"] == "None") && (!features["ears"] || features["ears"] == "None"))
 		return 1	//Pure humans are always allowed in all roles.
-
 	//Mutants are not allowed in most roles.
+	if(is_skeksis(H))
+		if(rank in command_positions) //Skeksis wouldn't be caught dead doing manual labour, that's slave labour! SKREEEE
+			return 1
+		else
+			return 0
+		if(rank == "Quartermaster") //QM is not contained in command_positions but we still want to bar mutants from it.
+			return 1
+		return ..()
 	if(rank in security_positions) //This list does not include lawyers.
 		return 0
 	if(rank in science_positions)
@@ -1616,5 +1624,108 @@ SYNDICATE BLACK OPS
 		override_float = 0
 		H.pass_flags &= ~PASSTABLE
 		H.CloseWings()
+
+//Skeksis
+
+/datum/species/skeksis
+	// https://www.youtube.com/watch?v=57vaKllPg7k&feature=youtu.be
+	name = "Skeksis"
+	id = "skeksis"
+	say_mod = "croaks"
+//	limbs_id = "skeksis"
+//	icon = 'icons/mob/skeksis.dmi'
+	//icon_state = "skeksis_s"
+//	default_color = "00FF00"
+	roundstart = 1
+	specflags = list(EYECOLOR,LIPS,PROTECTEDEYES, MUTCOLORS)//MUTCOLORS,
+	mutant_bodyparts = list("tail_lizard")
+	mutant_organs = list(/obj/item/organ/tongue)
+	default_features = list("tail" = "Dtiger")
+	attack_verb = "slash"
+	attack_sound = 'sound/weapons/slash.ogg'
+	miss_sound = 'sound/weapons/slashmiss.ogg'
+	meat = /obj/item/weapon/reagent_containers/food/snacks/meat/slab/human/mutant/lizard
+	skinned_type = /obj/item/stack/sheet/animalhide/lizard
+	exotic_bloodtype = "L"
+	stamina_recover_normal = 0.33 //from 66
+	siemens_coeff = 0.5
+	hazard_low_pressure = HAZARD_LOW_PRESSURE * 0.85 //changed from 75
+	hazard_high_pressure = HAZARD_HIGH_PRESSURE * 1.4 //from 1.2
+	invis_sight = INVISIBILITY_LIGHTING
+	cold_slowdown_factor = COLD_SLOWDOWN_FACTOR * 0.3
+	speedmod = -0.40 //from 0.33
+	radiation_faint_threshhold = 100 //Skeksis' world is polluted as hell CHANGED FROM 80
+	radiation_effect_mod = 0.5 //CHANGED FROM 2
+	punchdamagelow = 5
+	punchdamagehigh = 11//Spiky
+	sexes = 0//Asexual
+	roundstart = 1
+//	nojumpsuit = 1
+	high_temp_level_1 = BODYTEMP_HEAT_DAMAGE_LEVEL_2
+	high_temp_level_2 = BODYTEMP_HEAT_DAMAGE_LEVEL_3
+	high_temp_level_3 = BODYTEMP_HEAT_DAMAGE_LEVEL_3 + 1
+	low_temp_level_1 = BODYTEMP_COLD_DAMAGE_LEVEL_1
+	low_temp_level_2 = BODYTEMP_COLD_DAMAGE_LEVEL_2
+	low_temp_level_3 = BODYTEMP_COLD_DAMAGE_LEVEL_3
+	highpressure_mod = 0.85// from 75
+	lowpressure_mod = 0.85
+//	disliked_food = DAIRY | GRAIN
+	liked_food = GROSS | TOXIC | DAIRY | GRAIN | MEAT
+	toxic_food = null
+
+datum/species/skeksis/before_equip_job(datum/job/J, mob/living/carbon/human/H)
+	to_chat(H, "<span class='notice'><b>You are Unathi.</b> Hailing from the homeworld of Moghes, your people are descended from an older race lost to the sands of time.</span>")
+	to_chat(H, "<span class='notice'>Thick scales afford you protection from heat and pressure, but your cold-blooded nature is not exactly advantageous in a metal vessel surrounded by the cold depths of space.</span>")
+	to_chat(H, "<span class='notice'>You possess sharp claws that rend flesh easily, though NT obviously does not sanction their use against the crew.</span>")
+	to_chat(H, "<span class='notice'>Beware all things cold, for your metabolism cannot mitigate their effects as well as other warm-blooded creatures.</span>")
+	to_chat(H, "<span class='info'>For more information on your race, see https://wiki.yogstation.net/index.php?title=Unathi</span>")
+
+/datum/species/skeksis/random_name(gender,unique,lastname)
+//	if(unique)
+	//	return random_unique_skeksis_name(gender)
+//	var/skeksis name = "jerry"//fix this :^)
+
+	//var/randname = "Chamberlain"//skeksis_name()
+
+//	if(lastname)
+	//	randname += " [lastname]"
+	var/randname = "bob"
+
+	return randname
+
+//I wag in death
+/datum/species/skeksis/spec_death(gibbed, mob/living/carbon/human/H)
+	if(H)
+		H.endTailWag()
+
+/datum/species/skeksis/apply_damage(damage, damagetype = BRUTE, def_zone = null, blocked, mob/living/carbon/human/H, application=DAMAGE_PHYSICAL)
+	if((damagetype == BRUTE))
+		damage += 10 //When skeksis is hit, he wants to run for his life!
+		H.say("AIEEEEEEE!!")
+		speedmod = -2.5 // RUN AWAY SKEKSIS!
+		sleep(20)//2 seconds of super speed
+		speedmod = initial(speedmod)
+	return ..(damage, damagetype, def_zone, blocked, H, application)
+
+/datum/species/skeksis/handle_environment(datum/gas_mixture/environment, mob/living/carbon/human/H)
+	..()
+	if(!environment)
+		return
+	if(H.bodytemperature > 420) //FUCKING HOT OWIE
+		speedmod = -0.34
+	else if(H.bodytemperature > 310)
+		speedmod = 0.33 //Go more slwoly
+	else
+		speedmod = initial(speedmod)
+
+	if(H.bodytemperature < 70)
+		H.adjustToxLoss(0.5*REAGENTS_EFFECT_MULTIPLIER)
+		H.sleeping = max(8, H.sleeping)
+//	if(H.bodytemperature < 180)
+//		if(prob(75))
+//			H.confused = max(10, H.confused)
+//		if(H.nutrition >= 2)//lizards lose nutrition twice as fast as normal at low temperature
+//			H.nutrition -= 2
+
 
 #undef STATUS_MESSAGE_COOLDOWN
