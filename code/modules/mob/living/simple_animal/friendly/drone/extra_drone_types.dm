@@ -141,3 +141,123 @@
 
 /mob/living/simple_animal/drone/cogscarab/drone_chat(msg)
 	titled_hierophant_message(src, msg, "heavy_alloy") //HIEROPHANT DRONES
+
+
+/mob/living/simple_animal/bot/rex
+	name = "R.E.X Combat drone"
+	desc = "An imposing quadropedal drone with ominous red accents about it."
+	icon_state = "rex"
+	icon_living = "rex"
+	icon_dead = "rex_dead"
+	languages_spoken = BINARY
+	languages_understood = HUMAN|BINARY
+	pass_flags = PASSTABLE
+	health = 150
+	maxHealth = 150
+	density = TRUE
+	speed = 1.4
+	ventcrawler = 1
+	faction = list("syndicate")
+	speak_emote = list("intones", "hums")
+	var/hostile = 0 //Are we gonna kill EVERYTHING WE SEE
+	var/obj/item/weapon/gun/projectile/automatic/shotgun/bulldog/shotgun
+	var/mob/living/current_target
+	var/obj/item/device/rexcontroller/controller
+	var/turf/target_turf
+	var/scan_range = 20
+	var/nomove = FALSE //It's busy working
+	var/action_time = 40 //4 seconds to mount an obstacle
+	var/step_drain = 10 //one step for 10 cell drain
+	var/mob/living/aggro
+	var/temper = 0 //If it loses its temper, it'll kill whoever keeps bumping into it!
+	var/max_temper = 7 //User definable
+	var/attacking = 0
+	var/target_acquired = FALSE
+
+/mob/living/simple_animal/bot/proc/send_controller_feedback(var/message)
+	say(message)
+
+/mob/living/simple_animal/bot/rex/Bump(atom/movable/target)
+	if(istype(target, /turf/closed/wall))
+		send_controller_feedback("obstruction detected, beginning deconstruction")
+		var/turf/closed/wall/W = target
+		nomove = TRUE
+		visible_message("[src] squirts something on [W] and ignites it!")
+		W.thermitemelt(src)
+	else if(istype(target, /obj/structure))
+		visible_message("[src] starts scrabbling all over [target]!")
+		if(do_after(src, action_time, target = target))
+			forceMove(target.loc)
+
+	else if(istype(target, /mob/living))
+		visible_message("[src] tries to slide past [target] but can't!")
+		if(target == aggro)
+			temper ++
+			if(temper >= max_temper)
+				visible_message("[src] perks up and glares at [target]!")
+				attacking = 1
+
+/mob/living/simple_animal/bot/rex/process()
+	if(!nomove)
+		if(temper > 0)
+			if(prob(20))
+				temper --
+		if(current_target.z != src.z)
+			send_controller_feedback("Target signal lost.")
+		if(current_target in oview(scan_range))
+			check_target()
+		if(!attacking)
+			if(target_turf)
+				step_to(src,target_turf)
+			if(current_target)
+				step_to(src,current_target)
+		if(attacking)
+			step_to(src,aggro)
+		//	attack(aggro)
+		//	if(aggro.dead)
+			//	attacking = 0
+			//	aggro = null
+
+/mob/living/simple_animal/bot/rex/proc/hunt_target()
+	var/obj/machinery/navbeacon/NB = pick(deliverybeacons)
+	destination = new_destination	//It goes around all the departments to look for the target, once it finds the target it will not stop until they are dead.
+	target_turf = NB.loc
+
+/mob/living/simple_animal/bot/rex/proc/check_target()
+	if(!target_acquired)
+		send_controller_feedback("TARGET ACQUIRED: MOVING TO INTERCEPT")
+		speed = 2.4 //RUN FAST
+		step_drain = 50
+		visible_message("[src] perks up and glares at [current_target]!")
+		target_acquired = 1
+		target_turf = null
+		aggro = current_target
+		return 1
+	else
+		return 0
+
+/obj/item/device/rexcontroller
+	name = "Syndicate drone controller."
+	desc = "A wrist mounted screen with several buttons, link it with a REX drone to interface."
+	var/mob/living/simple_animal/bot/rex/linked
+
+
+/obj/item/device/rexcontroller/attack(atom/target,mob/user)
+	if(istype(target, /mob/living/simple_animal/bot/rex))
+		var/mob/living/simple_animal/bot/rex/R = target
+		if(!linked)
+			to_chat(user, "[R] has been linked to [src]")
+			R.controller = src
+			R.emote("ping")
+			linked = R
+		else
+			to_chat(user, "There is already a linked drone!, try resetting the controller first.")
+
+/obj/item/device/rexcontroller/proc/interface(mob/user)
+	switch(alert("Select an option.","Set operating parameters", "Pilot drone manually","Set drone target", "Summon drone"))
+		if("Set operating parameters")
+
+		if("Pilot drone manually")
+
+
+//Code adapted from: https://github.com/yogstation13/yogstation-old/blob/b19e39f3f986b4cd8223280d9c022b2c184fc098/code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm
