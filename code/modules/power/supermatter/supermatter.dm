@@ -74,9 +74,11 @@
 	radio = new(src)
 	radio.listening = 0
 	investigate_log("has been created.", "supermatter")
+	log_game("SINGULO: Supermatter Shard created at ([x],[y],[z])")
 
 
 /obj/machinery/power/supermatter_shard/Destroy()
+	log_game("SINGULO: Supermatter Shard destroyed.")
 	investigate_log("has been destroyed.", "supermatter")
 	qdel(radio)
 	poi_list -= src
@@ -84,6 +86,7 @@
 
 /obj/machinery/power/supermatter_shard/proc/prep_explode()
 	investigate_log("has exploded.", "supermatter")
+	log_game("SINGULO: Supermatter Shard exploded at ([x],[y],[z])")
 	grav_pulling = 1
 	exploded = 1
 
@@ -93,7 +96,7 @@
 	explosion(get_turf(src), explosion_power, explosion_power * 2, explosion_power * 3, explosion_power * 4, 1, 1)
 	qdel(src)
 	return
-	
+
 /obj/machinery/power/supermatter_shard/process()
 	var/turf/L = loc
 
@@ -107,14 +110,14 @@
 		supermatter_pull()
 	else if(isspaceturf(L))// Stop processing this stuff if we've been ejected.
 		return
-	
+
 	if(grav_pulling)
 		supermatter_pull()
 
 	if(damage > warning_point) // while the core is still damaged and it's still worth noting its status
 		if((world.timeofday - lastwarning) / 10 >= WARNING_DELAY)
 			var/stability = num2text(round((damage / explosion_point) * 100))
-				
+
 			if(damage > emergency_point)
 				radio.talk_into(src, "[emergency_alert] Instability: [stability]%")
 				lastwarning = world.timeofday
@@ -245,11 +248,12 @@
 /obj/machinery/power/supermatter_shard/singularity_act()
 	var/gain = 100
 	investigate_log("Supermatter shard consumed by singularity.","singulo")
+	log_game("SINGULO: Supermatter Shard has been consumed by a singularity.")
 	message_admins("Singularity has consumed a supermatter shard and can now become stage six.")
 	visible_message("<span class='userdanger'>[src] is consumed by the singularity!</span>")
 	for(var/mob/M in mob_list)
 		M << 'sound/effects/supermatter.ogg' //everyone goan know bout this
-		M << "<span class='boldannounce'>A horrible screeching fills your ears, and a wave of dread washes over you...</span>"
+		to_chat(M, "<span class='boldannounce'>A horrible screeching fills your ears, and a wave of dread washes over you...</span>")
 	qdel(src)
 	return(gain)
 
@@ -274,11 +278,11 @@
 	if(Adjacent(user))
 		return attack_hand(user)
 	else
-		user << "<span class='warning'>You attempt to interface with the control circuits but find they are not connected to your network. Maybe in a future firmware update.</span>"
+		to_chat(user, "<span class='warning'>You attempt to interface with the control circuits but find they are not connected to your network. Maybe in a future firmware update.</span>")
 	return
 
 /obj/machinery/power/supermatter_shard/attack_ai(mob/user)
-	user << "<span class='warning'>You attempt to interface with the control circuits but find they are not connected to your network. Maybe in a future firmware update.</span>"
+	to_chat(user, "<span class='warning'>You attempt to interface with the control circuits but find they are not connected to your network. Maybe in a future firmware update.</span>")
 
 /obj/machinery/power/supermatter_shard/attack_hand(mob/living/user)
 	if(!istype(user))

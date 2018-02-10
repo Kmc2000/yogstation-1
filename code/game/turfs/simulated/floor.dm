@@ -31,12 +31,17 @@ var/list/icons_to_ignore_at_floor_init = list("damaged1","damaged2","damaged3","
 	flags = GIRDERABLE
 	var/broken = 0
 	var/burnt = 0
+	var/placedby = null
 	var/floor_tile = null //tile that this floor drops
 	var/obj/item/stack/tile/builtin_tile = null //needed for performance reasons when the singularity rips off floor tiles
-	var/list/broken_states = list("damaged1", "damaged2", "damaged3", "damaged4", "damaged5")
-	var/list/burnt_states = list()
+	var/list/broken_states
+	var/list/burnt_states
 
 /turf/open/floor/New()
+	if(!broken_states)
+		broken_states = list("damaged1", "damaged2", "damaged3", "damaged4", "damaged5")
+	if(!burnt_states)
+		burnt_states = list()
 	..()
 	if(icon_state in icons_to_ignore_at_floor_init) //so damaged/burned tiles or plating icons aren't saved as the default
 		icon_regular_floor = "floor"
@@ -146,12 +151,12 @@ var/list/icons_to_ignore_at_floor_init = list("damaged1","damaged2","damaged3","
 		if(broken || burnt)
 			broken = 0
 			burnt = 0
-			user << "<span class='danger'>You remove the broken plating.</span>"
+			to_chat(user, "<span class='danger'>You remove the broken plating.</span>")
 		else
 			if(istype(src, /turf/open/floor/wood))
-				user << "<span class='danger'>You forcefully pry off the planks, destroying them in the process.</span>"
+				to_chat(user, "<span class='danger'>You forcefully pry off the planks, destroying them in the process.</span>")
 			else
-				user << "<span class='danger'>You remove the floor tile.</span>"
+				to_chat(user, "<span class='danger'>You remove the floor tile.</span>")
 				builtin_tile.loc = src
 		make_plating()
 		playsound(src, 'sound/items/Crowbar.ogg', 80, 1)
@@ -203,6 +208,7 @@ var/list/icons_to_ignore_at_floor_init = list("damaged1","damaged2","damaged3","
 /turf/open/floor/can_have_cabling()
 	return !burnt && !broken
 
-/turf/open/floor/initialize()
+/turf/open/floor/Initialize(mapload)
 	..()
-	MakeDirty()
+	if(mapload)
+		MakeDirty()
